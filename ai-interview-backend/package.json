@@ -1,0 +1,27 @@
+{
+  "name": "ai-interview-backend",
+  "version": "2.0.0",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "seed": "node seed/seedQuestions.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "AI Interview Microservice — Ollama LLaMA3 + DSA Engine",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.4.1",
+    "socket.io": "^4.8.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
