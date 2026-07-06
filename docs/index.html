@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HireSense – Technical Documentation</title>
+  <meta name="description" content="Official technical documentation for HireSense, an AI-powered talent acquisition platform." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #050d1a;
+      --navy-2:     #0a1628;
+      --navy-3:     #0f2040;
+      --blue:       #1a6fc4;
+      --blue-light: #3b8de8;
+      --teal:       #0db9ca;
+      --teal-light: #34d4e4;
+      --gold:       #f59e0b;
+      --green:      #10b981;
+      --purple:     #7c3aed;
+      --text-1:     #f0f6ff;
+      --text-2:     #94a3b8;
+      --text-3:     #64748b;
+      --border:     rgba(255,255,255,.08);
+      --glass:      rgba(255,255,255,.04);
+      --glass-2:    rgba(255,255,255,.07);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy);
+      color: var(--text-1);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--navy-2); }
+    ::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 3px; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 60px;
+      height: 64px;
+      background: rgba(5,13,26,.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .nav-logo-text { font-size: 18px; font-weight: 800; color: var(--text-1); letter-spacing: -.4px; }
+    .nav-logo-text span { color: var(--teal); }
+    .nav-links { display: flex; align-items: center; gap: 4px; }
+    .nav-links a {
+      font-size: 13px; font-weight: 500; color: var(--text-2);
+      text-decoration: none; padding: 6px 14px; border-radius: 7px;
+      transition: color .2s, background .2s;
+    }
+    .nav-links a:hover { color: var(--text-1); background: var(--glass-2); }
+    .nav-badge {
+      font-size: 11px; font-weight: 700; letter-spacing: .5px;
+      color: var(--teal); background: rgba(13,185,202,.12);
+      border: 1px solid rgba(13,185,202,.3);
+      padding: 4px 12px; border-radius: 100px;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 100px 60px 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 60% 40%, rgba(26,111,196,.18) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 90% 80%, rgba(13,185,202,.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 50% at 5% 10%, rgba(124,58,237,.1) 0%, transparent 60%);
+    }
+    .hero-grid {
+      position: absolute; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 680px; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--teal);
+      background: rgba(13,185,202,.1); border: 1px solid rgba(13,185,202,.25);
+      padding: 7px 16px; border-radius: 100px;
+      margin-bottom: 28px;
+    }
+    .hero-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+    .hero-title {
+      font-size: clamp(42px, 6vw, 72px); font-weight: 900;
+      line-height: 1.05; letter-spacing: -2px;
+      margin-bottom: 22px;
+    }
+    .hero-title .grad {
+      background: linear-gradient(135deg, var(--teal-light), var(--blue-light) 50%, #a78bfa);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-desc {
+      font-size: 18px; color: var(--text-2); line-height: 1.75;
+      margin-bottom: 40px; max-width: 540px;
+    }
+    .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 56px; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 14px; font-weight: 700;
+      background: linear-gradient(135deg, var(--blue), var(--teal));
+      color: white; padding: 13px 26px; border-radius: 10px;
+      text-decoration: none; transition: opacity .2s, transform .2s;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 14px; font-weight: 600;
+      background: var(--glass-2); border: 1px solid var(--border);
+      color: var(--text-1); padding: 13px 26px; border-radius: 10px;
+      text-decoration: none; transition: background .2s, border-color .2s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.15); }
+    .hero-stats { display: flex; gap: 36px; }
+    .hero-stat-num { font-size: 28px; font-weight: 800; color: var(--text-1); }
+    .hero-stat-label { font-size: 12px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
+    .hero-stat + .hero-stat { padding-left: 36px; border-left: 1px solid var(--border); }
+    /* right decorative card */
+    .hero-visual {
+      position: absolute; right: 60px; top: 50%; transform: translateY(-50%);
+      z-index: 1; width: 420px;
+    }
+    .arch-card {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px;
+      backdrop-filter: blur(16px);
+    }
+    .arch-card-header {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .arch-card-header::before { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .arch-card-header::after  { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .arch-layer-row { margin-bottom: 10px; }
+    .arch-layer-title {
+      font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 6px;
+    }
+    .arch-layer-nodes { display: flex; flex-wrap: wrap; gap: 6px; }
+    .arch-node {
+      font-size: 12px; font-weight: 600; color: var(--text-1);
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 7px; padding: 6px 12px; white-space: nowrap;
+    }
+    .arch-node.blue  { background: rgba(26,111,196,.25); border-color: rgba(26,111,196,.5); color: #93c5fd; }
+    .arch-node.teal  { background: rgba(13,185,202,.2); border-color: rgba(13,185,202,.4); color: var(--teal-light); }
+    .arch-node.purple{ background: rgba(124,58,237,.2); border-color: rgba(124,58,237,.4); color: #c4b5fd; }
+    .arch-node.green { background: rgba(16,185,129,.2); border-color: rgba(16,185,129,.4); color: #6ee7b7; }
+    .arch-arrow-down { text-align: center; color: var(--text-3); font-size: 16px; margin: 4px 0; }
+
+    /* ── SECTION WRAPPER ── */
+    section { padding: 100px 60px; }
+    section:nth-child(even) { background: var(--navy-2); }
+    .section-tag {
+      display: inline-block;
+      font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--teal); margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 42px); font-weight: 800;
+      letter-spacing: -1px; margin-bottom: 14px;
+    }
+    .section-desc { font-size: 16px; color: var(--text-2); max-width: 600px; margin-bottom: 56px; }
+
+    /* ── FEATURES GRID ── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+      transition: border-color .3s, transform .3s, background .3s;
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(255,255,255,.02));
+      pointer-events: none;
+    }
+    .feature-card:hover {
+      border-color: rgba(255,255,255,.16);
+      background: var(--glass-2);
+      transform: translateY(-3px);
+    }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 18px;
+    }
+    .feature-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p  { font-size: 14px; color: var(--text-2); line-height: 1.7; }
+    .feature-card .tag {
+      display: inline-block; margin-top: 14px;
+      font-size: 11px; font-weight: 700; letter-spacing: .5px;
+      padding: 3px 10px; border-radius: 100px;
+    }
+
+    /* ── TECH STACK ── */
+    .tech-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .tech-card {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px;
+    }
+    .tech-card-layer {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 10px;
+    }
+    .tech-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip {
+      font-size: 12px; font-weight: 600;
+      padding: 4px 11px; border-radius: 7px;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+      color: var(--text-2);
+    }
+
+    /* ── SERVICES ── */
+    .services-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .service-card {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 18px; padding: 32px;
+      transition: border-color .3s;
+    }
+    .service-card:hover { border-color: rgba(255,255,255,.14); }
+    .service-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+    .service-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+    .service-port {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: var(--text-3);
+      background: rgba(255,255,255,.05); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 6px;
+    }
+    .service-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+    .service-card p  { font-size: 14px; color: var(--text-2); line-height: 1.75; margin-bottom: 18px; }
+    .service-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+    .stag {
+      font-size: 11px; font-weight: 600; letter-spacing: .3px;
+      padding: 4px 11px; border-radius: 7px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.09);
+      color: var(--text-2);
+    }
+
+    /* ── API TABLE ── */
+    .api-table-wrap {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 18px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: rgba(255,255,255,.04); border-bottom: 1px solid var(--border); }
+    thead th {
+      font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--text-3); padding: 16px 24px; text-align: left;
+    }
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: background .2s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+    tbody td { padding: 14px 24px; font-size: 14px; color: var(--text-2); }
+    .method {
+      display: inline-block; font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 5px;
+    }
+    .m-get    { background: rgba(16,185,129,.2);  color: #6ee7b7; }
+    .m-post   { background: rgba(59,130,246,.2);  color: #93c5fd; }
+    .m-put    { background: rgba(245,158,11,.2);  color: #fcd34d; }
+    .m-delete { background: rgba(239,68,68,.2);   color: #fca5a5; }
+    .route {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; color: var(--text-1); font-weight: 500;
+    }
+
+    /* ── AI ENGINE ── */
+    .ai-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .state-machine { position: relative; }
+    .sm-step {
+      display: flex; align-items: flex-start; gap: 18px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .sm-step:last-child { border-bottom: none; }
+    .sm-num {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--blue), var(--teal));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800;
+    }
+    .sm-body strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .sm-body p { font-size: 13px; color: var(--text-2); margin: 0; }
+    /* scoring */
+    .score-row { margin-bottom: 20px; }
+    .score-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .score-header span:first-child { font-size: 14px; font-weight: 600; }
+    .score-header span:last-child  { font-size: 14px; font-weight: 800; color: var(--teal); }
+    .score-bar { height: 8px; background: rgba(255,255,255,.08); border-radius: 100px; overflow: hidden; }
+    .score-fill { height: 100%; border-radius: 100px; }
+    .hints-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+    .hint-card {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+    }
+    .hint-card .lv { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-3); margin-bottom: 6px; }
+    .hint-card p { font-size: 13px; color: var(--text-2); font-style: italic; margin: 0; }
+
+    /* ── DATA MODELS ── */
+    .models-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+    .model-card {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+    }
+    .model-header {
+      padding: 18px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .model-name { font-size: 16px; font-weight: 700; }
+    .model-badge {
+      font-size: 11px; font-weight: 600; letter-spacing: .5px;
+      padding: 3px 10px; border-radius: 6px;
+      background: rgba(13,185,202,.15); color: var(--teal-light);
+    }
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; line-height: 1.9;
+      padding: 22px 24px;
+      color: #94a3b8;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .k { color: #7dd3fc; }   /* key */
+    .t { color: #a78bfa; }   /* type */
+    .v { color: #86efac; }   /* value */
+    .c { color: #475569; font-style: italic; } /* comment */
+
+    /* ── SETUP ── */
+    .setup-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+    .prereq-list { list-style: none; padding: 0; }
+    .prereq-list li {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+      font-size: 14px; color: var(--text-2);
+    }
+    .prereq-list li:last-child { border-bottom: none; }
+    .prereq-list li .icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+      background: var(--glass-2);
+    }
+    .prereq-list li strong { display: block; font-size: 14px; font-weight: 700; color: var(--text-1); }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px; color: #94a3b8;
+      background: rgba(255,255,255,.06); border: 1px solid var(--border);
+      padding: 18px 22px;
+      border-radius: 12px;
+      display: block; white-space: pre; overflow-x: auto;
+      line-height: 1.85;
+      margin-bottom: 16px;
+    }
+    code .cm { color: #475569; font-style: italic; }
+    code .kw { color: #7dd3fc; }
+    code .st { color: #86efac; }
+
+    /* ── ROADMAP ── */
+    .roadmap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .roadmap-card {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 16px; padding: 26px;
+    }
+    .roadmap-card .wk {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 16px;
+    }
+    .roadmap-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+    .roadmap-card ul { list-style: none; padding: 0; }
+    .roadmap-card li {
+      font-size: 13px; color: var(--text-2);
+      padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .roadmap-card li::before { content: '→'; color: var(--teal); font-size: 11px; }
+    .roadmap-card li:last-child { border-bottom: none; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--navy);
+      border-top: 1px solid var(--border);
+      padding: 40px 60px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .footer-logo { display: flex; align-items: center; gap: 10px; }
+    .footer-logo-text { font-size: 16px; font-weight: 800; }
+    .footer-logo-text span { color: var(--teal); }
+    .footer-info { font-size: 13px; color: var(--text-3); }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 13px; color: var(--text-3); text-decoration: none; transition: color .2s; }
+    .footer-links a:hover { color: var(--text-1); }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 0 60px; }
+
+    /* ── Utility ── */
+    .mt-8  { margin-top: 32px; }
+    .mb-4  { margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">🎯</div>
+    <div class="nav-logo-text">Hire<span>Sense</span></div>
+  </a>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#features">Features</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#api">API</a>
+    <a href="#ai-engine">AI Engine</a>
+    <a href="#models">Data Models</a>
+    <a href="#setup">Setup</a>
+  </div>
+  <div class="nav-badge">v1.0.0 — MIT</div>
+</nav>
+
+
+<!-- ── HERO ── -->
+<section class="hero" id="overview">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+
+  <div class="hero-content">
+    <div class="hero-tag">AI-Powered Talent Acquisition Platform</div>
+    <h1 class="hero-title">
+      Technical<br/>
+      <span class="grad">Documentation</span>
+    </h1>
+    <p class="hero-desc">
+      HireSense is a full-stack, microservices-based hiring platform combining ML resume screening, AI-proctored assessments, and locally-hosted LLM technical interviews into one cohesive system.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn-primary" href="#architecture">Explore Architecture ↓</a>
+      <a class="btn-secondary" href="https://github.com/abhirajk970/HireSense" target="_blank">GitHub →</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">5+</div>
+        <div class="hero-stat-label">Microservices</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">4</div>
+        <div class="hero-stat-label">AI Integrations</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">7</div>
+        <div class="hero-stat-label">API Route Modules</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">MERN</div>
+        <div class="hero-stat-label">Core Stack</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="arch-card">
+      <div class="arch-card-header">System Layers</div>
+
+      <div class="arch-layer-row">
+        <div class="arch-layer-title">Frontend</div>
+        <div class="arch-layer-nodes">
+          <div class="arch-node blue">React (Vite)</div>
+          <div class="arch-node blue">Next.js OA</div>
+          <div class="arch-node blue">AI Interview UI</div>
+        </div>
+      </div>
+      <div class="arch-arrow-down">↓</div>
+
+      <div class="arch-layer-row">
+        <div class="arch-layer-title">Backend Services</div>
+        <div class="arch-layer-nodes">
+          <div class="arch-node">Core API :5000</div>
+          <div class="arch-node">OA Backend :4000</div>
+          <div class="arch-node">AI Interview</div>
+        </div>
+      </div>
+      <div class="arch-arrow-down">↓</div>
+
+      <div class="arch-layer-row">
+        <div class="arch-layer-title">AI & Execution Layer</div>
+        <div class="arch-layer-nodes">
+          <div class="arch-node teal">FastAPI :8000</div>
+          <div class="arch-node teal">LLaMA 3 (Ollama)</div>
+          <div class="arch-node purple">Piston Runner</div>
+        </div>
+      </div>
+      <div class="arch-arrow-down">↓</div>
+
+      <div class="arch-layer-row">
+        <div class="arch-layer-title">Storage & Infra</div>
+        <div class="arch-layer-nodes">
+          <div class="arch-node green">MongoDB</div>
+          <div class="arch-node">Multer / Files</div>
+          <div class="arch-node">Nodemailer</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── FEATURES ── -->
+<section id="features">
+  <div class="section-tag">Core Capabilities</div>
+  <div class="section-title">What HireSense Does</div>
+  <div class="section-desc">Five tightly integrated modules that automate the entire recruitment lifecycle — from the first application to the final offer.</div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(26,111,196,.2);">🤖</div>
+      <h3>AI DSA Interview Engine</h3>
+      <p>Local LLaMA 3 (via Ollama) drives structured DSA interviews through a finite state machine — evaluating intuition, generating progressive hints, and asking follow-up questions dynamically.</p>
+      <span class="tag" style="background:rgba(26,111,196,.15);color:#93c5fd;">LLaMA 3 · Ollama · State Machine</span>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(13,185,202,.2);">🛡️</div>
+      <h3>AI-Proctored Online Assessment</h3>
+      <p>Secure, invitation-based testing with ML-powered proctoring. Computer vision monitors for suspicious activity during assessments. Auto-MCQ generation from job descriptions.</p>
+      <span class="tag" style="background:rgba(13,185,202,.15);color:var(--teal-light);">Computer Vision · Auto-MCQ</span>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(245,158,11,.2);">📄</div>
+      <h3>ML Resume Screening Engine</h3>
+      <p>FastAPI service using pdfplumber, spaCy NER, and TF-IDF cosine similarity to parse, rank, and match resumes against job descriptions. Extracts CGPA, experience, skills, and organizations automatically.</p>
+      <span class="tag" style="background:rgba(245,158,11,.15);color:#fcd34d;">spaCy · TF-IDF · pdfplumber</span>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(16,185,129,.2);">🏢</div>
+      <h3>Candidate & Company Portals</h3>
+      <p>Dedicated dashboards for candidates to track applications, and for companies to manage job postings, review AI-generated scores, advance pipeline stages, and schedule interviews.</p>
+      <span class="tag" style="background:rgba(16,185,129,.15);color:#6ee7b7;">React · Role-Based Auth</span>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(124,58,237,.2);">📅</div>
+      <h3>Smart Interview Scheduling</h3>
+      <p>Automated cron-based scheduler sends email reminders at 2-hour and 5-minute marks. Supports both Human and AI interview modes with unique video room IDs per session.</p>
+      <span class="tag" style="background:rgba(124,58,237,.15);color:#c4b5fd;">node-cron · Nodemailer · UUID</span>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(239,68,68,.15);">🔐</div>
+      <h3>Secure Code Execution</h3>
+      <p>Candidate code is evaluated deterministically using the Piston API in an isolated sandbox — with time and memory limits — giving objective, hallucination-free pass/fail results per test case.</p>
+      <span class="tag" style="background:rgba(239,68,68,.12);color:#fca5a5;">Piston API · Docker · Sandbox</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── TECH STACK ── -->
+<section id="architecture">
+  <div class="section-tag">Technology Stack</div>
+  <div class="section-title">Built With</div>
+  <div class="section-desc">A modern, production-grade stack chosen for performance, modularity, and local-first AI execution.</div>
+
+  <div class="tech-grid">
+    <div class="tech-card">
+      <div class="tech-card-layer">Frontend</div>
+      <div class="tech-chips">
+        <span class="chip">React.js</span>
+        <span class="chip">Vite</span>
+        <span class="chip">Tailwind CSS</span>
+        <span class="chip">Next.js</span>
+        <span class="chip">Monaco Editor</span>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-card-layer">Core Backend</div>
+      <div class="tech-chips">
+        <span class="chip">Node.js</span>
+        <span class="chip">Express.js v5</span>
+        <span class="chip">Mongoose</span>
+        <span class="chip">JWT</span>
+        <span class="chip">bcryptjs</span>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-card-layer">AI & ML Service</div>
+      <div class="tech-chips">
+        <span class="chip">FastAPI</span>
+        <span class="chip">Python 3.9+</span>
+        <span class="chip">spaCy</span>
+        <span class="chip">scikit-learn</span>
+        <span class="chip">pdfplumber</span>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-card-layer">LLM & Voice</div>
+      <div class="tech-chips">
+        <span class="chip">LLaMA 3</span>
+        <span class="chip">Ollama</span>
+        <span class="chip">Whisper (tiny.en)</span>
+        <span class="chip">faster-whisper</span>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-card-layer">Code Execution</div>
+      <div class="tech-chips">
+        <span class="chip">Piston API</span>
+        <span class="chip">Docker</span>
+        <span class="chip">Sandboxed</span>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-card-layer">Database & Infra</div>
+      <div class="tech-chips">
+        <span class="chip">MongoDB</span>
+        <span class="chip">Multer</span>
+        <span class="chip">node-cron</span>
+        <span class="chip">Nodemailer</span>
+        <span class="chip">uuid</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 60px;">
+    <div class="section-tag">Microservices</div>
+    <h2 class="section-title" style="font-size:32px;margin-bottom:14px;">Service Breakdown</h2>
+    <p class="section-desc">Each service is independently deployable and owns its domain.</p>
+
+    <div class="services-layout">
+      <div class="service-card">
+        <div class="service-top">
+          <div class="service-icon" style="background:rgba(26,111,196,.2);">🔧</div>
+          <div class="service-port">backend/ · :5000</div>
+        </div>
+        <h3>Core API Backend</h3>
+        <p>Central application API handling JWT authentication, user profiles (candidate / company / interviewer), job postings with multi-stage pipelines, application management, interview scheduling, and automated cron workflows.</p>
+        <div class="service-tags">
+          <span class="stag">7 route modules</span>
+          <span class="stag">6 Mongoose models</span>
+          <span class="stag">node-cron</span>
+          <span class="stag">Nodemailer</span>
+        </div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-top">
+          <div class="service-icon" style="background:rgba(13,185,202,.2);">📝</div>
+          <div class="service-port">oa-backend/ · :4000</div>
+        </div>
+        <h3>Online Assessment Backend</h3>
+        <p>Manages assessment delivery, a seeded DSA + MCQ question bank, candidate session tracking, proctoring event logging, and deterministic score computation for test submissions.</p>
+        <div class="service-tags">
+          <span class="stag">Assessment model</span>
+          <span class="stag">Question bank</span>
+          <span class="stag">Proctoring</span>
+          <span class="stag">Score engine</span>
+        </div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-top">
+          <div class="service-icon" style="background:rgba(245,158,11,.2);">🧠</div>
+          <div class="service-port">ai-service/ · :8000</div>
+        </div>
+        <h3>AI Service (Python / FastAPI)</h3>
+        <p>Exposes <code style="display:inline;padding:2px 6px;font-size:12px;border-radius:5px;background:rgba(255,255,255,.08);border:none;">/parse-resume</code> using pdfplumber + spaCy NER + TF-IDF cosine similarity, and <code style="display:inline;padding:2px 6px;font-size:12px;border-radius:5px;background:rgba(255,255,255,.08);border:none;">/transcribe</code> using an offline Whisper tiny.en model for speech-to-text.</p>
+        <div class="service-tags">
+          <span class="stag">FastAPI</span>
+          <span class="stag">spaCy NER</span>
+          <span class="stag">Whisper STT</span>
+          <span class="stag">TF-IDF</span>
+        </div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-top">
+          <div class="service-icon" style="background:rgba(124,58,237,.2);">💬</div>
+          <div class="service-port">ai-interview-backend/</div>
+        </div>
+        <h3>AI Interview Backend</h3>
+        <p>Orchestrates the LLaMA 3–powered DSA interview state machine: question delivery, intuition evaluation, progressive hint generation, Piston-based code execution against test cases, and structured multi-dimension scoring.</p>
+        <div class="service-tags">
+          <span class="stag">LLaMA 3 · Ollama</span>
+          <span class="stag">State Machine</span>
+          <span class="stag">Piston API</span>
+          <span class="stag">Scoring Engine</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── API ENDPOINTS ── -->
+<section id="api">
+  <div class="section-tag">REST API</div>
+  <div class="section-title">Core Endpoints</div>
+  <div class="section-desc">All routes served by the Core API Backend at <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--teal);">localhost:5000</span></div>
+
+  <div class="api-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Route</th>
+          <th>Description</th>
+          <th>Auth</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td class="route">/api/auth/register</td>
+          <td>Register a new user (candidate / company / interviewer)</td>
+          <td style="color:var(--text-3)">Public</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td class="route">/api/auth/login</td>
+          <td>Authenticate and receive a signed JWT access token</td>
+          <td style="color:var(--text-3)">Public</td>
+        </tr>
+        <tr>
+          <td><span class="method m-get">GET</span></td>
+          <td class="route">/api/jobs</td>
+          <td>List all active job postings with filters</td>
+          <td style="color:var(--teal)">JWT</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td class="route">/api/jobs</td>
+          <td>Create a new job posting with multi-stage pipeline</td>
+          <td style="color:var(--teal)">Company</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td class="route">/api/applications</td>
+          <td>Submit job application with resume file upload (Multer)</td>
+          <td style="color:var(--teal)">Candidate</td>
+        </tr>
+        <tr>
+          <td><span class="method m-put">PUT</span></td>
+          <td class="route">/api/applications/:id/advance</td>
+          <td>Advance or reject an application through pipeline stages</td>
+          <td style="color:var(--teal)">Company</td>
+        </tr>
+        <tr>
+          <td><span class="method m-get">GET</span></td>
+          <td class="route">/api/profile</td>
+          <td>Retrieve the authenticated user's full profile</td>
+          <td style="color:var(--teal)">JWT</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td class="route">/api/interviews</td>
+          <td>Schedule an interview (Human or AI mode) with unique room ID</td>
+          <td style="color:var(--teal)">Company</td>
+        </tr>
+        <tr>
+          <td><span class="method m-get">GET</span></td>
+          <td class="route">/api/notifications</td>
+          <td>Fetch in-app notifications for the authenticated user</td>
+          <td style="color:var(--teal)">JWT</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td class="route">/api/interviewers</td>
+          <td>Submit structured interview feedback and multi-dimension scores</td>
+          <td style="color:var(--teal)">Interviewer</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ── AI ENGINE ── -->
+<section id="ai-engine">
+  <div class="section-tag">AI Interview Engine</div>
+  <div class="section-title">How the AI Interview Works</div>
+  <div class="section-desc">A deterministic state machine wraps LLaMA 3, ensuring reproducible, hallucination-resistant evaluations every time.</div>
+
+  <div class="ai-layout">
+    <!-- State Machine -->
+    <div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:6px;color:var(--teal);">Interview State Machine</h3>
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;">States progress linearly, preventing LLM chaos and making results auditable.</p>
+      <div class="state-machine">
+        <div class="sm-step">
+          <div class="sm-num">1</div>
+          <div class="sm-body">
+            <strong>INIT → QUESTION_GIVEN</strong>
+            <p>DSA question fetched from DB; LLM optionally rephrases it in natural language.</p>
+          </div>
+        </div>
+        <div class="sm-step">
+          <div class="sm-num">2</div>
+          <div class="sm-body">
+            <strong>INTUITION_EXPLAINED → INTUITION_APPROVED</strong>
+            <p>Candidate explains approach. LLM evaluates: correct / partially correct / incorrect. Hint triggered if needed.</p>
+          </div>
+        </div>
+        <div class="sm-step">
+          <div class="sm-num">3</div>
+          <div class="sm-body">
+            <strong>CODE_WRITTEN → CODE_EVALUATED</strong>
+            <p>Candidate codes in Monaco editor. Piston API executes code against test cases — deterministically, no LLM involved.</p>
+          </div>
+        </div>
+        <div class="sm-step">
+          <div class="sm-num">4</div>
+          <div class="sm-body">
+            <strong>CODE_EXPLAINED → FOLLOW_UP</strong>
+            <p>LLM asks time complexity, space complexity, and edge case questions. Dynamic follow-ups generated from submission.</p>
+          </div>
+        </div>
+        <div class="sm-step">
+          <div class="sm-num">5</div>
+          <div class="sm-body">
+            <strong>FINAL_FEEDBACK</strong>
+            <p>Structured report with split scoring delivered to both the candidate and the recruiting company.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scoring -->
+    <div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:6px;color:var(--teal);">Scoring Breakdown</h3>
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:20px;">Deterministic code scoring carries the highest weight; LLM-assisted soft-skill scoring supplements it.</p>
+
+      <div class="score-row">
+        <div class="score-header"><span>Code Correctness (Deterministic)</span><span>70%</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:70%;background:linear-gradient(90deg,var(--blue),var(--teal))"></div></div>
+      </div>
+      <div class="score-row">
+        <div class="score-header"><span>Intuition Quality (LLM)</span><span>15%</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:15%;background:linear-gradient(90deg,var(--teal),var(--teal-light))"></div></div>
+      </div>
+      <div class="score-row">
+        <div class="score-header"><span>Code Explanation (LLM)</span><span>10%</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:10%;background:linear-gradient(90deg,var(--gold),#fcd34d)"></div></div>
+      </div>
+      <div class="score-row">
+        <div class="score-header"><span>Communication (LLM)</span><span>5%</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:5%;background:linear-gradient(90deg,var(--green),#6ee7b7)"></div></div>
+      </div>
+
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:18px 20px;margin:24px 0;">
+        <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:8px;">💡 Hint Penalty</div>
+        <div style="font-size:13px;color:var(--text-2);">0 hints → no penalty &nbsp;·&nbsp; 1 hint → −5% &nbsp;·&nbsp; 2 hints → −10% &nbsp;·&nbsp; 3 hints → −20%</div>
+      </div>
+
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;color:var(--teal);">Progressive Hint Levels</h3>
+      <div class="hints-grid">
+        <div class="hint-card">
+          <div class="lv">Level 1 — Directional</div>
+          <p>"Think about reducing repeated work."</p>
+        </div>
+        <div class="hint-card">
+          <div class="lv">Level 2 — Structural</div>
+          <p>"Can a hash map help here?"</p>
+        </div>
+        <div class="hint-card">
+          <div class="lv">Level 3 — Strong</div>
+          <p>"Store elements and check complements."</p>
+        </div>
+        <div class="hint-card">
+          <div class="lv">Level 4 — Near-solution</div>
+          <p>"Check if target − nums[i] exists."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── DATA MODELS ── -->
+<section id="models">
+  <div class="section-tag">Database</div>
+  <div class="section-title">Data Models</div>
+  <div class="section-desc">All data stored in MongoDB. Key Mongoose schemas powering the platform.</div>
+
+  <div class="models-grid">
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name">User</div>
+        <div class="model-badge">MongoDB</div>
+      </div>
+      <pre><span class="k">name</span>:          <span class="t">String</span>          <span class="c">// required</span>
+<span class="k">email</span>:         <span class="t">String</span>          <span class="c">// unique</span>
+<span class="k">role</span>:          <span class="t">Enum</span>            <span class="c">// candidate|company|interviewer</span>
+<span class="k">skills</span>:        <span class="t">[String]</span>
+<span class="k">cgpa</span>:          <span class="t">Number</span>
+<span class="k">resumeUrl</span>:     <span class="t">String</span>          <span class="c">// candidates only</span>
+<span class="k">companyName</span>:   <span class="t">String</span>          <span class="c">// companies only</span>
+<span class="k">specialty</span>:     <span class="t">String</span>          <span class="c">// interviewers only</span>
+<span class="k">accountStatus</span>: <span class="t">Enum</span>            <span class="c">// active|deactivated</span></pre>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name">Job</div>
+        <div class="model-badge">MongoDB</div>
+      </div>
+      <pre><span class="k">title</span>:            <span class="t">String</span>
+<span class="k">requiredSkills</span>:   <span class="t">[String]</span>
+<span class="k">stages</span>:           <span class="t">[Object]</span>
+  <span class="k">name</span>:           <span class="t">String</span>
+  <span class="k">interviewType</span>: <span class="t">Enum</span>           <span class="c">// None|Human|AI</span>
+  <span class="k">advanceMode</span>:   <span class="t">Enum</span>           <span class="c">// Manual|Auto</span>
+  <span class="k">advanceTopK</span>:   <span class="t">Number</span>
+<span class="k">processStatus</span>:    <span class="t">Enum</span>           <span class="c">// Active|Closed|Stopped</span>
+<span class="k">createdBy</span>:        <span class="t">ObjectId</span>       <span class="c">// ref: User</span></pre>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name">Application</div>
+        <div class="model-badge">MongoDB</div>
+      </div>
+      <pre><span class="k">candidateId</span>:   <span class="t">ObjectId</span>
+<span class="k">jobId</span>:         <span class="t">ObjectId</span>
+<span class="k">resumeScore</span>:   <span class="t">Number</span>          <span class="c">// ML parsed score</span>
+<span class="k">matchScore</span>:    <span class="t">Number</span>          <span class="c">// TF-IDF cosine similarity</span>
+<span class="k">status</span>:        <span class="t">Enum</span>
+              <span class="c">// Applied|Testing|Interview|Rejected|Hired</span>
+<span class="k">oaStatus</span>:      <span class="t">Enum</span>
+              <span class="c">// Not Scheduled|Scheduled|Completed</span>
+<span class="k">oaScore</span>:       <span class="t">Number</span>
+<span class="k">oaWindowStart</span>: <span class="t">Date</span>
+<span class="k">oaWindowEnd</span>:   <span class="t">Date</span></pre>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name">Interview</div>
+        <div class="model-badge">MongoDB</div>
+      </div>
+      <pre><span class="k">interviewMode</span>:  <span class="t">Enum</span>           <span class="c">// Human|AI</span>
+<span class="k">scheduledAt</span>:    <span class="t">Date</span>
+<span class="k">status</span>:         <span class="t">Enum</span>
+              <span class="c">// Scheduled|Completed|Cancelled|Expired</span>
+<span class="k">remindersSent</span>:  <span class="t">Object</span>
+  <span class="k">twoHour</span>:     <span class="t">Boolean</span>
+  <span class="k">fiveMin</span>:     <span class="t">Boolean</span>
+<span class="k">scores</span>:         <span class="t">Object</span>
+  <span class="k">communication</span>: <span class="t">0–10</span>
+  <span class="k">technical</span>:     <span class="t">0–10</span>
+  <span class="k">problemSolving</span>:<span class="t">0–10</span>
+  <span class="k">overall</span>:       <span class="t">0–10</span>
+<span class="k">roomId</span>:         <span class="t">String</span>          <span class="c">// unique video room</span></pre>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── SETUP ── -->
+<section id="setup">
+  <div class="section-tag">Getting Started</div>
+  <div class="section-title">Setup & Deployment</div>
+  <div class="section-desc">Get all services running locally in under 10 minutes.</div>
+
+  <div class="setup-layout">
+    <div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--teal);">Prerequisites</h3>
+      <ul class="prereq-list">
+        <li>
+          <div class="icon">⬡</div>
+          <div><strong>Node.js v18+</strong>Core API, OA Backend, AI Interview backends</div>
+        </li>
+        <li>
+          <div class="icon">🐍</div>
+          <div><strong>Python 3.9+</strong>AI Service (FastAPI, spaCy, Whisper)</div>
+        </li>
+        <li>
+          <div class="icon">🦙</div>
+          <div><strong>Ollama</strong>Local LLaMA 3 model runtime (no GPU required)</div>
+        </li>
+        <li>
+          <div class="icon">🍃</div>
+          <div><strong>MongoDB</strong>Primary database — local instance or MongoDB Atlas</div>
+        </li>
+        <li>
+          <div class="icon">🐳</div>
+          <div><strong>Docker (optional)</strong>Enhanced sandboxed code execution</div>
+        </li>
+      </ul>
+
+      <h3 style="font-size:17px;font-weight:700;margin:28px 0 14px;color:var(--teal);">4-Week Roadmap</h3>
+      <div class="roadmap" style="grid-template-columns:1fr 1fr;">
+        <div class="roadmap-card">
+          <div class="wk">Week 1</div>
+          <h4>Foundation</h4>
+          <ul>
+            <li>MERN project setup</li>
+            <li>Auth & portals</li>
+            <li>Question bank</li>
+          </ul>
+        </div>
+        <div class="roadmap-card">
+          <div class="wk">Week 2</div>
+          <h4>Code Engine</h4>
+          <ul>
+            <li>Monaco editor</li>
+            <li>Piston runner</li>
+            <li>Test cases</li>
+          </ul>
+        </div>
+        <div class="roadmap-card">
+          <div class="wk">Week 3</div>
+          <h4>AI Integration</h4>
+          <ul>
+            <li>LLaMA 3 via Ollama</li>
+            <li>Hint system</li>
+            <li>State machine</li>
+          </ul>
+        </div>
+        <div class="roadmap-card">
+          <div class="wk">Week 4</div>
+          <h4>Polish</h4>
+          <ul>
+            <li>Scoring engine</li>
+            <li>Feedback reports</li>
+            <li>UI polish</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:14px;color:var(--teal);">Installation</h3>
+<code><span class="cm"># 1. Clone repository</span>
+git clone https://github.com/abhirajk970/HireSense.git
+cd HireSense
+
+<span class="cm"># 2. Install Node dependencies for each service</span>
+cd backend    && npm install
+cd ../oa-backend && npm install
+cd ../ai-interview-backend && npm install
+
+<span class="cm"># 3. Set up Python AI service</span>
+cd ../ai-service
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+
+<span class="cm"># 4. Pull LLaMA 3 model locally via Ollama</span>
+ollama pull llama3</code>
+
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:14px;color:var(--teal);">Environment Variables</h3>
+<code><span class="cm"># backend/.env</span>
+<span class="kw">MONGO_URI</span>=<span class="st">mongodb://localhost:27017/hiresense</span>
+<span class="kw">JWT_SECRET</span>=<span class="st">your_jwt_secret_key</span>
+<span class="kw">PORT</span>=<span class="st">5000</span>
+
+<span class="cm"># oa-backend/.env</span>
+<span class="kw">MONGO_URI</span>=<span class="st">mongodb://localhost:27017/hiresense_oa</span>
+<span class="kw">PORT</span>=<span class="st">4000</span></code>
+
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:14px;color:var(--teal);">Running All Services</h3>
+<code><span class="cm"># Terminal 1 — Core API</span>
+cd backend && npm run dev
+
+<span class="cm"># Terminal 2 — OA Backend</span>
+cd oa-backend && npm run dev
+
+<span class="cm"># Terminal 3 — AI Service (Python)</span>
+cd ai-service && uvicorn main:app --reload --port 8000
+
+<span class="cm"># Terminal 4 — Frontend</span>
+cd frontend && npm run dev
+
+<span class="cm"># Terminal 5 — LLM Runtime</span>
+ollama serve</code>
+    </div>
+  </div>
+</section>
+
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo">
+    <div class="nav-logo-icon" style="width:30px;height:30px;font-size:15px;">🎯</div>
+    <div class="footer-logo-text">Hire<span>Sense</span></div>
+  </div>
+  <div class="footer-info">Technical Documentation v1.0 &nbsp;·&nbsp; July 2026 &nbsp;·&nbsp; MIT License</div>
+  <div class="footer-links">
+    <a href="https://github.com/abhirajk970/HireSense" target="_blank">GitHub</a>
+    <a href="#overview">Back to Top ↑</a>
+  </div>
+</footer>
+
+</body>
+</html>

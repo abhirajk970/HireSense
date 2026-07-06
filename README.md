@@ -95,3 +95,15 @@ Contributions are welcome! Please open an issue or submit a pull request with yo
 ## 📄 License
 
 This project is licensed under the MIT License.
+
+---
+
+## 📖 Documentation
+
+Full technical documentation is available as an interactive website:
+
+[![Documentation](https://img.shields.io/badge/Docs-Live%20Site-0db9ca?style=for-the-badge&logo=github)](https://abhirajk970.github.io/HireSense/)
+
+> **[https://abhirajk970.github.io/HireSense/](https://abhirajk970.github.io/HireSense/)**
+>
+> Covers architecture, tech stack, API endpoints, AI interview engine, data models, and setup guide.
