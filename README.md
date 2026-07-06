@@ -17,9 +17,9 @@ HireSense is a comprehensive, AI-driven hiring platform that seamlessly connects
 HireSense is built on a scalable microservices architecture to ensure high availability and modular development.
 
 **Frontend:**
-*   React.js / Next.js
+*   React.js
 *   Tailwind CSS (Glassmorphism & Modern UI)
-*   State Management: Redux / Context API
+*   State Management: Context API
 
 **Backend & Microservices:**
 *   Node.js & Express.js
@@ -37,7 +37,6 @@ HireSense is built on a scalable microservices architecture to ensure high avail
 
 **Database:**
 *   MongoDB (NoSQL for flexible data storage)
-*   PostgreSQL (For structured transactional data)
 
 ## 📁 Repository Structure
 
