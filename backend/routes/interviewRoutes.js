@@ -1,5 +1,6 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
+const mongoose = require('mongoose');
 const Interview = require('../models/Interview');
 const Application = require('../models/Application');
 const Notification = require('../models/Notification');
@@ -71,6 +72,39 @@ router.get('/candidate/:candidateId', async (req, res) => {
             .populate('jobId', 'title')
             .sort({ scheduledAt: -1 });
         res.json(interviews);
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get Interviews and AI Interviews by Application ID
+router.get('/application/:applicationId', async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+        
+        // Fetch Human & some AI stubs from the main Interviews collection
+        const interviews = await Interview.find({ applicationId })
+            .populate('interviewerId', 'name specialty email')
+            .sort({ scheduledAt: -1 })
+            .lean();
+
+        // Fetch detailed AI Interviews directly from the aiinterviews collection in the same database
+        const aiInterviews = await mongoose.connection.db.collection('aiinterviews').find({ 
+            applicationId: new mongoose.Types.ObjectId(applicationId) 
+        }).toArray();
+
+        // Merge them. For each interview, if it's AI, check if we have detailed data.
+        const history = interviews.map(inv => {
+            if (inv.interviewMode === 'AI') {
+                const aiDetails = aiInterviews.find(ai => String(ai.roomId) === String(inv.roomId));
+                if (aiDetails) {
+                    return { ...inv, aiDetails };
+                }
+            }
+            return inv;
+        });
+
+        res.json(history);
     } catch(err) {
         res.status(500).json({ error: err.message });
     }

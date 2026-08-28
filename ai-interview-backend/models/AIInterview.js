@@ -82,8 +82,16 @@ const aiInterviewSchema = new mongoose.Schema({
   tabSwitchCount: { type: Number, default: 0 },
 
   startedAt:   Date,
-  completedAt: Date
+  completedAt: Date,
+
+  // ── TTL & Demo fields ──────────────────────────────────────────────
+  isDemo:    { type: Boolean, default: false },
+  // MongoDB will automatically hard-delete the document at this timestamp
+  expiresAt: { type: Date, default: null }
 
 }, { timestamps: true });
+
+// TTL index — MongoDB checks every 60s and removes expired documents automatically
+aiInterviewSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model("AIInterview", aiInterviewSchema);

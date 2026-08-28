@@ -1,31 +1,19 @@
 import React, { useState, useRef } from 'react';
 
-const TABS = [
-    { id: 'approach',   icon: '📝', label: 'Approach',   placeholder: 'Describe your high-level approach and intuition.\n\nWhat pattern does this problem follow?\nWhat is your initial thought process?' },
-    { id: 'algorithm',  icon: '⚙️', label: 'Algorithm',  placeholder: 'Write your step-by-step algorithm:\n\n1. \n2. \n3. \n\nTime complexity: O(?)\nSpace complexity: O(?)' },
-    { id: 'pseudocode', icon: '💻', label: 'Pseudocode', placeholder: 'function solution(input):\n    // write your pseudocode here\n    \n    return result' },
-    { id: 'notes',      icon: '🗒️', label: 'Notes',      placeholder: 'Scratch space — edge cases, examples, ideas:\n\nEdge cases:\n• \n• \n\nExamples:\n• ' },
-];
-
-export default function NotebookPanel({ question, onSendToAI, isThinking }) {
-    const [activeTab, setActiveTab]  = useState('approach');
-    const [content, setContent]      = useState({ approach: '', algorithm: '', pseudocode: '', notes: '' });
-    const [history, setHistory]      = useState([]);
-    const [expanded, setExpanded]    = useState(false); // question card toggle
+export default function NotebookPanel({ question, onSendToAI, isThinking, dsaRevealed }) {
+    const [notes, setNotes]         = useState('');
+    const [history, setHistory]     = useState([]);
+    const [expanded, setExpanded]   = useState(false); // question card toggle
     const textareaRef = useRef(null);
 
-    const currentTab    = TABS.find(t => t.id === activeTab);
-    const hasContent    = TABS.some(t => content[t.id].trim());
+    const hasContent = notes.trim().length > 0;
 
     const handleSend = () => {
         if (!hasContent || isThinking) return;
-        const parts = TABS.filter(t => content[t.id].trim());
-        const message = parts.length === 1
-            ? `[${parts[0].label}]\n${content[parts[0].id]}`
-            : parts.map(t => `[${t.label}]\n${content[t.id]}`).join('\n\n---\n\n');
+        const message = notes.trim();
 
         setHistory(prev => [...prev, { id: Date.now(), content: message, ts: new Date() }]);
-        setContent({ approach: '', algorithm: '', pseudocode: '', notes: '' });
+        setNotes('');
         onSendToAI?.(message);
         textareaRef.current?.focus();
     };
@@ -63,7 +51,8 @@ export default function NotebookPanel({ question, onSendToAI, isThinking }) {
                 </div>
             ) : (
                 <div className="flex-shrink-0 m-4 mb-2 bg-[#13131c]/70 border border-white/[0.06] rounded-2xl p-4 text-center">
-                    <p className="text-xs text-gray-600">Waiting for question from AI...</p>
+                    <p className="text-xs text-gray-600 mb-2">Technical Discussion Phase</p>
+                    <p className="text-xs text-gray-500">You can use this notebook to jot down your approach, architecture, or notes. The DSA coding environment will unlock soon.</p>
                 </div>
             )}
 
@@ -82,38 +71,22 @@ export default function NotebookPanel({ question, onSendToAI, isThinking }) {
                 </div>
             )}
 
-            {/* ── Tab Bar ───────────────────────────────────────────────── */}
-            <div className="flex-shrink-0 flex items-center gap-1 px-4 pb-1">
-                {TABS.map(tab => (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${
-                            activeTab === tab.id
-                                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.04]'
-                        }`}>
-                        <span>{tab.icon}</span>
-                        {tab.label}
-                        {content[tab.id].trim() && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 ml-0.5"/>}
-                    </button>
-                ))}
-            </div>
-
-            {/* ── Writing Area ──────────────────────────────────────────── */}
+            {/* ── Unified Notebook Workspace ────────────────────────────── */}
             <div className="flex-1 min-h-0 px-4 pb-2">
                 <div className="h-full bg-[#13131c]/80 border border-white/[0.06] rounded-2xl flex flex-col overflow-hidden">
                     <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-white/[0.04]">
-                        <span className="text-base">{currentTab?.icon}</span>
-                        <span className="text-sm font-semibold text-white">{currentTab?.label}</span>
-                        {content[activeTab].trim() && (
-                            <span className="ml-auto text-[10px] text-gray-600">{content[activeTab].length} chars</span>
+                        <span className="text-base">📓</span>
+                        <span className="text-sm font-semibold text-white">Unified Notebook Workspace</span>
+                        {hasContent && (
+                            <span className="ml-auto text-[10px] text-gray-600">{notes.length} chars</span>
                         )}
                     </div>
                     <textarea
                         ref={textareaRef}
-                        value={content[activeTab]}
-                        onChange={e => setContent(prev => ({ ...prev, [activeTab]: e.target.value }))}
+                        value={notes}
+                        onChange={e => setNotes(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={currentTab?.placeholder}
+                        placeholder={`Jot down your high-level approach, step-by-step algorithm, or notes here...\n\nWhat pattern does this problem follow?\nTime complexity: O(?)\nSpace complexity: O(?)\n\nPress Ctrl+Enter or click 'Send to AI' below to submit it.`}
                         className="flex-1 w-full bg-transparent px-5 py-4 text-sm text-gray-200 placeholder-gray-700/60 resize-none outline-none leading-7"
                         style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace" }}
                     />
@@ -122,7 +95,7 @@ export default function NotebookPanel({ question, onSendToAI, isThinking }) {
 
             {/* ── Send Bar ─────────────────────────────────────────────── */}
             <div className="flex-shrink-0 px-4 pb-4 flex items-center gap-3">
-                <button onClick={() => setContent({ approach: '', algorithm: '', pseudocode: '', notes: '' })}
+                <button onClick={() => setNotes('')}
                     disabled={!hasContent}
                     className="text-xs text-gray-600 hover:text-gray-400 font-medium px-3 py-2 rounded-lg hover:bg-white/[0.04] transition-colors disabled:opacity-30">
                     Clear

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import DateTimePicker from './DateTimePicker';
 import ApplicantProfileModal from './ApplicantProfileModal';
 
 export default function JobApplicantsManager({ job, applicants, onBack, handleScheduleOA, fetchDashboardData }) {
@@ -9,7 +10,17 @@ export default function JobApplicantsManager({ job, applicants, onBack, handleSc
     
     // Scheduling Modal State
     const [candidateToSchedule, setCandidateToSchedule] = useState(null);
-    const [scheduleDetails, setScheduleDetails] = useState({ stageName: "", scheduledAt: "" });
+    const [scheduleDetails, setScheduleDetails] = useState({ stageIndex: "", scheduledAt: "", interviewerId: "" });
+    const [companyInterviewers, setCompanyInterviewers] = useState([]);
+
+    useEffect(() => {
+        const creatorId = job?.createdBy?._id || job?.createdBy;
+        if (creatorId) {
+            axios.get(`http://localhost:5000/api/interviewers/company/${creatorId}`)
+                .then(res => setCompanyInterviewers(res.data))
+                .catch(err => console.error(err));
+        }
+    }, [job?.createdBy]);
 
     const stopProcess = async () => {
         if(!window.confirm("Are you sure you want to stop this hiring process? No more progress will be made.")) return;
@@ -24,29 +35,47 @@ export default function JobApplicantsManager({ job, applicants, onBack, handleSc
     };
 
     const handleScheduleInterview = async () => {
-        if (!scheduleDetails.stageName || !scheduleDetails.scheduledAt) {
+        if (scheduleDetails.stageIndex === "" || !scheduleDetails.scheduledAt) {
             return alert("Please provide all scheduling details.");
         }
 
-        // Derive interviewMode from the selected pipeline stage's interviewType
-        const selectedStage = job.stages?.find(s => s.name === scheduleDetails.stageName);
+        const selectedStage = job.stages[scheduleDetails.stageIndex];
         const interviewMode = selectedStage?.interviewType === 'AI' ? 'AI' : 'Human';
         
+        if (interviewMode === 'Human' && !scheduleDetails.interviewerId) {
+            return alert("Please select an interviewer.");
+        }
+
+        const finalInterviewerId = interviewMode === 'AI' 
+            ? (job?.createdBy?._id || job?.createdBy || localStorage.getItem("userId")) 
+            : scheduleDetails.interviewerId;
+
         try {
             await axios.post('http://localhost:5000/api/interviews/schedule', {
                 jobId: job._id,
                 applicationId: candidateToSchedule._id,
-                interviewerId: job.createdBy || localStorage.getItem("userId"),
+                interviewerId: finalInterviewerId,
                 candidateId: candidateToSchedule.candidateId._id,
-                stageName: scheduleDetails.stageName,
+                stageName: selectedStage.name,
                 scheduledAt: scheduleDetails.scheduledAt,
                 interviewMode
             });
             alert(`${interviewMode === 'AI' ? 'AI' : 'Human'} Interview successfully scheduled!`);
             setCandidateToSchedule(null);
-            setScheduleDetails({ stageName: "", scheduledAt: "" });
+            setScheduleDetails({ stageIndex: "", scheduledAt: "", interviewerId: "" });
         } catch (err) {
             alert("Failed to schedule interview: " + err.message);
+        }
+    };
+
+    const handleExtendOffer = async (appId) => {
+        if (!confirm("Are you sure you want to extend an offer to this candidate?")) return;
+        try {
+            await axios.post(`http://localhost:5000/api/applications/${appId}/offer`);
+            alert("Offer extended and candidate notified!");
+            fetchDashboardData();
+        } catch(e) {
+            alert("Failed to extend offer");
         }
     };
 
@@ -146,18 +175,34 @@ export default function JobApplicantsManager({ job, applicants, onBack, handleSc
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center mt-5 pt-4 border-t border-white/[0.06] flex-wrap gap-2">
-                                    <span className="text-xs font-semibold bg-white/[0.06] text-gray-400 px-3 py-1 rounded-lg border border-white/[0.06]">{app.status}</span>
+                                    <span className={`text-xs font-semibold px-3 py-1 rounded-lg border ${app.status === 'Hired' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-white/[0.06] text-gray-400 border-white/[0.06]'}`}>{app.status}</span>
                                     <div className="flex gap-2">
-                                        {app.oaStatus !== "Scheduled" && app.oaStatus !== "Completed" && (
-                                            <button onClick={(e) => { e.stopPropagation(); handleScheduleOA(app._id); }} className="text-xs bg-white/[0.06] hover:bg-white/[0.1] text-white font-semibold px-3 py-1.5 rounded-lg border border-white/[0.1] transition">
-                                                Assign OA
-                                            </button>
+                                        {app.status !== 'Hired' && app.status !== 'Rejected' && (
+                                            <>
+                                                {app.oaStatus !== "Scheduled" && app.oaStatus !== "Completed" && (
+                                                    <button onClick={(e) => { e.stopPropagation(); handleScheduleOA(app._id); }} className="text-xs bg-white/[0.06] hover:bg-white/[0.1] text-white font-semibold px-3 py-1.5 rounded-lg border border-white/[0.1] transition">
+                                                        Assign OA
+                                                    </button>
+                                                )}
+                                                <button onClick={(e) => { e.stopPropagation(); setCandidateToSchedule(app); }} className="text-xs bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-semibold px-3 py-1.5 rounded-lg transition shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40">
+                                                    Schedule Next Round
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleExtendOffer(app._id); }} className="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-semibold px-3 py-1.5 rounded-lg border border-emerald-500/20 transition">
+                                                    Extend Offer
+                                                </button>
+                                            </>
                                         )}
-                                        <button onClick={(e) => { e.stopPropagation(); setCandidateToSchedule(app); }} className="text-xs bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-semibold px-3 py-1.5 rounded-lg transition shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40">
-                                            Schedule Next Round
-                                        </button>
                                     </div>
                                 </div>
+                                {app.assignmentSubmission?.repoLink && (
+                                    <div className="mt-3 p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl text-xs flex justify-between items-center">
+                                        <span className="text-indigo-300 font-semibold">Assignment Submitted</span>
+                                        <div className="flex gap-3">
+                                            <a href={app.assignmentSubmission.repoLink} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline" onClick={e => e.stopPropagation()}>Repo</a>
+                                            {app.assignmentSubmission.liveLink && <a href={app.assignmentSubmission.liveLink} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline" onClick={e => e.stopPropagation()}>Live</a>}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -218,24 +263,47 @@ export default function JobApplicantsManager({ job, applicants, onBack, handleSc
                                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Select Pipeline Stage</label>
                                 <select 
                                     className="w-full bg-black/50 border border-white/[0.1] rounded-xl p-3 text-white outline-none focus:border-indigo-500"
-                                    value={scheduleDetails.stageName}
-                                    onChange={(e) => setScheduleDetails(prev => ({...prev, stageName: e.target.value}))}
+                                    value={scheduleDetails.stageIndex}
+                                    onChange={(e) => setScheduleDetails(prev => ({...prev, stageIndex: e.target.value}))}
                                 >
                                     <option value="" disabled>Select a stage...</option>
                                     {job.stages && job.stages.map((st, i) => (
-                                        <option key={i} value={st.name}>{st.name} {st.interviewType && st.interviewType !== "None" ? `(${st.interviewType})` : ""}</option>
+                                        <option key={i} value={i}>{st.name} {st.interviewType && st.interviewType !== "None" ? `(${st.interviewType})` : ""}</option>
                                     ))}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Date & Time</label>
-                                <input 
-                                    type="datetime-local" 
-                                    className="w-full bg-black/50 border border-white/[0.1] rounded-xl p-3 text-white outline-none focus:border-indigo-500"
+                                <DateTimePicker
+                                    dark
                                     value={scheduleDetails.scheduledAt}
-                                    onChange={(e) => setScheduleDetails(prev => ({...prev, scheduledAt: e.target.value}))}
+                                    onChange={(val) => setScheduleDetails(prev => ({...prev, scheduledAt: val}))}
+                                    placeholder="Pick interview date & time"
+                                    minDate={new Date()}
                                 />
                             </div>
+                            {scheduleDetails.stageIndex !== "" && job.stages[scheduleDetails.stageIndex]?.interviewType === 'Human' && (
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-gray-500 mb-1.5">Select Interviewer</label>
+                                    <select 
+                                        className="w-full bg-black/50 border border-white/[0.1] rounded-xl p-3 text-white outline-none focus:border-indigo-500"
+                                        value={scheduleDetails.interviewerId}
+                                        onChange={(e) => setScheduleDetails(prev => ({...prev, interviewerId: e.target.value}))}
+                                    >
+                                        <option value="" disabled>Select an interviewer...</option>
+                                        {companyInterviewers.map(inv => {
+                                            // The hint asked to only select if they don't have an interview right now
+                                            // As a proxy, if they have upcomingCount > 0, we can indicate they are busy
+                                            const isBusy = inv.upcomingCount > 0;
+                                            return (
+                                                <option key={inv._id} value={inv._id} disabled={isBusy}>
+                                                    {inv.name} ({inv.specialty}) {isBusy ? '- Busy' : ''}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-3">

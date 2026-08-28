@@ -155,7 +155,17 @@ function JobApplication() {
 
                  <div className="flex gap-3 justify-center">
                      <button onClick={() => navigate('/candidate')} className="px-6 py-3 rounded-xl border border-white/[0.1] text-gray-300 font-semibold hover:bg-white/[0.04] transition-colors">Return to Dashboard</button>
-                     <button onClick={() => navigate(`/test/mock/application/${result.application._id}`)} className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-semibold shadow-lg shadow-indigo-500/20 hover:-translate-y-0.5 transition-all">Take Assessment</button>
+                      <button 
+                         onClick={() => {
+                           const appId = result.application?._id || "app-sarah";
+                           const candId = candidateId || "candidate-sarah";
+                           const targetUrl = `http://localhost:5174/assessment/${appId}/${candId}`;
+                           window.open(targetUrl, "_blank");
+                         }} 
+                         className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-semibold shadow-lg shadow-indigo-500/20 hover:-translate-y-0.5 transition-all"
+                       >
+                         Take Assessment
+                       </button>
                  </div>
             </div>
         )}

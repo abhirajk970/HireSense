@@ -19,6 +19,7 @@ app.use("/api/applications", require("./routes/applicationRoutes"));
 app.use("/api/profile", require("./routes/profileRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/interviews", require("./routes/interviewRoutes"));
+app.use("/api/interviewers", require("./routes/interviewerRoutes"));
 
 // Initialize cron jobs
 require("./cron");

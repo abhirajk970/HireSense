@@ -1,6 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function ApplicantProfileModal({ applicant, onClose }) {
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    if (applicant?._id) {
+        axios.get(`http://localhost:5000/api/interviews/application/${applicant._id}`)
+            .then(res => setHistory(res.data))
+            .catch(err => console.error("Failed to fetch interview history:", err))
+            .finally(() => setLoadingHistory(false));
+    }
+  }, [applicant]);
+
   if (!applicant) return null;
   const candidate = applicant.candidateId;
 
@@ -9,7 +22,7 @@ export default function ApplicantProfileModal({ applicant, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-center items-center p-4">
-      <div className="bg-[#12121a] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden border border-white/[0.08] animate-slideUp">
+      <div className="bg-[#12121a] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-white/[0.08] animate-slideUp">
         
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 flex justify-between items-center text-white">
@@ -69,10 +82,7 @@ export default function ApplicantProfileModal({ applicant, onClose }) {
                             <span className="text-sm font-medium text-gray-400">Resume Match</span>
                             <span className="font-bold text-indigo-300 text-lg">{matchScore}%</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-gray-400">MCQ Status</span>
-                            <span className={`font-semibold text-sm ${applicant.status === "Testing" ? 'text-amber-400' : 'text-emerald-400'}`}>{applicant.status === "Testing" ? "Pending" : "Passed"}</span>
-                        </div>
+
                         <div className="flex justify-between items-center pt-3 border-t border-white/[0.06]">
                             <span className="text-sm font-bold text-white">Proctored OA Score</span>
                             <span className="font-bold text-indigo-300 text-xl">{finalScore}{finalScore !== "Pending" && "%"}</span>
@@ -87,6 +97,133 @@ export default function ApplicantProfileModal({ applicant, onClose }) {
                 
                 <p className="text-center text-xs text-gray-600">Use this overview to finalize your decision.</p>
             </div>
+        </div>
+
+        {/* Interview History Section */}
+        <div className="p-8 border-t border-white/[0.06] bg-black/20">
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-[0.1em] mb-6 flex items-center gap-2">
+                <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Interview History
+            </h3>
+
+            {loadingHistory ? (
+                <div className="text-center text-gray-500 text-sm py-8 animate-pulse">Loading interview timeline...</div>
+            ) : history.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm py-8 border border-dashed border-white/[0.1] rounded-2xl">No interviews recorded yet.</div>
+            ) : (
+                <div className="space-y-4">
+                    {history.map((inv, idx) => (
+                        <div key={inv._id || idx} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.03] transition">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${inv.interviewMode === 'AI' ? 'bg-violet-500/20 text-violet-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                                            {inv.interviewMode} Round
+                                        </span>
+                                        <h4 className="text-white font-bold">{inv.stageName}</h4>
+                                    </div>
+                                    <p className="text-xs text-gray-500">
+                                        {new Date(inv.scheduledAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                                        {inv.interviewerId && ` • Interviewer: ${inv.interviewerId.name}`}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${
+                                        inv.status === 'Completed' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 
+                                        inv.status === 'Cancelled' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
+                                        'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                    }`}>
+                                        {inv.status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {inv.status === 'Completed' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t border-white/[0.06]">
+                                    {/* Scores */}
+                                    <div className="space-y-2">
+                                        <h5 className="text-[10px] font-bold text-gray-500 uppercase">Score Breakdown</h5>
+                                        {inv.interviewMode === 'AI' && inv.aiDetails ? (
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                <div className="bg-black/30 p-2 rounded-lg flex justify-between">
+                                                    <span className="text-gray-400">Code Quality</span>
+                                                    <span className="text-indigo-300 font-bold">{inv.aiDetails.scores?.codeQuality || 0}%</span>
+                                                </div>
+                                                <div className="bg-black/30 p-2 rounded-lg flex justify-between">
+                                                    <span className="text-gray-400">Communication</span>
+                                                    <span className="text-indigo-300 font-bold">{inv.aiDetails.scores?.communication || 0}%</span>
+                                                </div>
+                                                <div className="bg-black/30 p-2 rounded-lg flex justify-between">
+                                                    <span className="text-gray-400">Code Correctness</span>
+                                                    <span className="text-indigo-300 font-bold">{inv.aiDetails.scores?.codeCorrectness || 0}%</span>
+                                                </div>
+                                                <div className="bg-black/30 p-2 rounded-lg flex justify-between border border-indigo-500/20">
+                                                    <span className="text-gray-400">Overall</span>
+                                                    <span className="text-indigo-400 font-bold">{inv.aiDetails.scores?.overall || 0}%</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                <div className="bg-black/30 p-2 rounded-lg flex justify-between">
+                                                    <span className="text-gray-400">Technical</span>
+                                                    <span className="text-indigo-300 font-bold">{inv.scores?.technical || 0}/10</span>
+                                                </div>
+                                                <div className="bg-black/30 p-2 rounded-lg flex justify-between">
+                                                    <span className="text-gray-400">Communication</span>
+                                                    <span className="text-indigo-300 font-bold">{inv.scores?.communication || 0}/10</span>
+                                                </div>
+                                                <div className="bg-black/30 p-2 rounded-lg flex justify-between">
+                                                    <span className="text-gray-400">Problem Solving</span>
+                                                    <span className="text-indigo-300 font-bold">{inv.scores?.problemSolving || 0}/10</span>
+                                                </div>
+                                                <div className="bg-black/30 p-2 rounded-lg flex justify-between border border-indigo-500/20">
+                                                    <span className="text-gray-400">Overall</span>
+                                                    <span className="text-indigo-400 font-bold">{inv.scores?.overall || 0}/10</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Feedback */}
+                                    <div className="space-y-3">
+                                        {inv.interviewMode === 'AI' && inv.aiDetails?.aiSummary && (
+                                            <div>
+                                                <h5 className="text-[10px] font-bold text-gray-500 uppercase mb-1.5">AI Evaluation Summary</h5>
+                                                <div className="text-xs text-gray-300 leading-relaxed bg-black/30 p-3 rounded-lg border border-white/[0.04]">
+                                                    {inv.aiDetails.aiSummary}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {inv.interviewMode === 'Human' && (
+                                            <>
+                                                {inv.interviewerNotes && (
+                                                    <div>
+                                                        <h5 className="text-[10px] font-bold text-gray-500 uppercase mb-1.5">Interviewer Notes</h5>
+                                                        <div className="text-xs text-gray-300 leading-relaxed bg-black/30 p-3 rounded-lg border border-white/[0.04]">
+                                                            {inv.interviewerNotes}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {inv.candidateFeedback && (
+                                                    <div>
+                                                        <h5 className="text-[10px] font-bold text-gray-500 uppercase mb-1.5">Candidate Feedback</h5>
+                                                        <div className="text-xs text-gray-400 italic bg-black/30 p-3 rounded-lg border border-white/[0.04]">
+                                                            "{inv.candidateFeedback}"
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
       </div>
     </div>

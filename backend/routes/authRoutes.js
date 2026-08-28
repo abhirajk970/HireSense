@@ -57,10 +57,12 @@ router.post("/login", async (req, res) => {
   );
 
   res.json({
-  token,
-  role: user.role,
-  userId: user._id
-});
+    token,
+    role: user.role,
+    userId: user._id,
+    name: user.name,
+    companyId: user.companyId || null
+  });
 });
 
 module.exports = router;

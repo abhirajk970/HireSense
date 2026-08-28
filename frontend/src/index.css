@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 /* ===== Dark Theme (Default) ===== */
 [data-theme="dark"] {
@@ -110,7 +110,31 @@ body {
   color: #fff;
 }
 
+/* ===== Dropdown / Select fix for dark AND light mode ===== */
+/* Without this, browser-native <option> elements inherit the OS default
+   colour scheme and appear white-on-white in dark mode or black-on-black
+   in light mode depending on the browser. */
+
+[data-theme="dark"] select {
+  color-scheme: dark;
+}
+
+[data-theme="dark"] select option {
+  background-color: #1a1a2e;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] select option:checked,
+[data-theme="dark"] select option:hover {
+  background-color: #312e81;
+  color: #ffffff;
+}
+
 /* Light theme specific overrides for select dropdowns */
+[data-theme="light"] select {
+  color-scheme: light;
+}
+
 [data-theme="light"] select option {
   background: #ffffff;
   color: #0f172a;
@@ -134,3 +158,12 @@ body {
   .t-danger { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
 }
 
+/* ===== DateTimePicker & modal animation ===== */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

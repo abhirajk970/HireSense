@@ -1,27 +1,23 @@
 const express = require("express");
 const Job = require("../models/Job");
-const Test = require("../models/Test");
+const upload = require("../middleware/upload");
 
 const router = express.Router();
 
-// Helper function to generate mock questions based on skills
-const generateMockQuestions = (skills) => {
-  const defaults = [
-    { questionText: "What is the primary role of a backend developer?", options: ["UI Design", "Server Logic", "Marketing", "Data Entry"], correctAnswer: "Server Logic" },
-    { questionText: "Which of these is a database?", options: ["MongoDB", "React", "Express", "Node"], correctAnswer: "MongoDB" },
-    { questionText: "What does API stand for?", options: ["App Process Interface", "Application Programming Interface", "Auto Program Integration", "Apple Pie Ingredients"], correctAnswer: "Application Programming Interface" },
-    { questionText: "Which HTTP method is used to create a resource?", options: ["GET", "POST", "DELETE", "PUT"], correctAnswer: "POST" },
-    { questionText: "What is React primarily used for?", options: ["Database Management", "Building User Interfaces", "Server Configuration", "OS Development"], correctAnswer: "Building User Interfaces" }
-  ];
-  return defaults;
-};
+// Upload Assignment PDF
+router.post("/upload-assignment", upload.single("file"), async (req, res) => {
+  try {
+      if (!req.file) return res.status(400).json({ msg: "No file uploaded" });
+      res.json({ url: req.file.path.replace(/\\/g, "/") });
+  } catch (err) {
+      res.status(500).json({ error: err.message });
+  }
+});
 
-// Create Job & Generate associated test
+// Create Job
 router.post("/", async (req, res) => {
   try {
     const job = await Job.create(req.body);
-    const mockQuestions = generateMockQuestions(req.body.requiredSkills || []);
-    await Test.create({ jobId: job._id, questions: mockQuestions });
     res.status(201).json(job);
   } catch (err) {
     res.status(500).json({ error: err.message });

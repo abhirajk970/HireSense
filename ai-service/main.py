@@ -1,13 +1,37 @@
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from typing import Optional
 import pdfplumber
 import io
 import re
 import spacy
+import base64
+import numpy as np
+import scipy.io.wavfile as wavfile
+from faster_whisper import WhisperModel
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 app = FastAPI()
+
+# Enable CORS for direct front-end candidate assessments
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize local Whisper Model (runs completely offline and free on CPU)
+try:
+    print("[AI Service] Loading local WhisperModel 'tiny.en' on CPU...")
+    whisper_model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+    print("[AI Service] WhisperModel loaded successfully!")
+except Exception as e:
+    print(f"[AI Service] Warning: Failed to load local WhisperModel: {e}")
+    whisper_model = None
 
 # Load the English NLP model for Named Entity Recognition
 try:
@@ -79,3 +103,39 @@ async def parse_resume(file: UploadFile = File(...), job_description: Optional[s
         "semantic_match_score": round(semantic_match_score, 2),
         "text_length": len(text)
     }
+
+class TranscribeRequest(BaseModel):
+    audio: str  # base64 encoded WAV file
+
+@app.post("/transcribe")
+async def transcribe(payload: TranscribeRequest):
+    if whisper_model is None:
+        raise HTTPException(status_code=500, detail="Local Whisper model is not initialized")
+    
+    try:
+        # Decode base64 audio payload
+        audio_bytes = base64.b64decode(payload.audio)
+        
+        # Read standard WAV PCM binary stream
+        samplerate, data = wavfile.read(io.BytesIO(audio_bytes))
+        
+        # Convert integer PCM data to Float32 normalized array between -1.0 and 1.0
+        if data.dtype == np.int16:
+            audio_data = data.astype(np.float32) / 32768.0
+        elif data.dtype == np.float32:
+            audio_data = data
+        else:
+            audio_data = data.astype(np.float32)
+            
+        # Transcribe audio buffer locally using Whisper
+        segments, info = whisper_model.transcribe(audio_data, beam_size=5, language="en")
+        
+        # Combine transcribed segments
+        transcription = " ".join([segment.text for segment in segments]).strip()
+        print(f"[Whisper Local] Transcribed segment: '{transcription}'")
+        
+        return {"text": transcription}
+        
+    except Exception as e:
+        print(f"[Whisper Local] Transcription error: {e}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")

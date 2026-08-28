@@ -19,8 +19,8 @@ export default function DSAPractice() {
     const fetchData = async () => {
       try {
         const [qRes, sRes] = await Promise.all([
-          axios.get("http://localhost:5001/api/assessments/questions/all"),
-          candidateId ? axios.get(`http://localhost:5001/api/assessments/practice/solved/${candidateId}`) : Promise.resolve({ data: [] })
+          axios.get("http://localhost:5003/api/assessments/questions/all"),
+          candidateId ? axios.get(`http://localhost:5003/api/assessments/practice/solved/${candidateId}`) : Promise.resolve({ data: [] })
         ]);
         setQuestions(qRes.data);
         setSolvedIds(sRes.data);

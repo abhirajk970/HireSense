@@ -4,7 +4,7 @@ import axios from "axios";
 
 const AI_SERVER = "http://localhost:5200";
 
-export default function EditorView({ code, language, onCodeChange, onLanguageChange, roomId }) {
+export default function EditorView({ code, language, onCodeChange, onLanguageChange, roomId, onRunComplete }) {
     const [output, setOutput]         = useState("");
     const [isRunning, setIsRunning]   = useState(false);
     const [testResults, setTestResults] = useState(null); // { passed, total, errors }
@@ -26,7 +26,7 @@ export default function EditorView({ code, language, onCodeChange, onLanguageCha
                 language
             });
 
-            const { testResults: tr, message } = res.data;
+            const { testResults: tr, message, state } = res.data;
             setTestResults(tr);
 
             const lines = [];
@@ -38,6 +38,10 @@ export default function EditorView({ code, language, onCodeChange, onLanguageCha
             }
             lines.push(`\n⏱  ${tr.timeTaken}ms`);
             setOutput(lines.join("\n"));
+
+            if (onRunComplete) {
+                onRunComplete({ testResults: tr, message, state });
+            }
 
         } catch (err) {
             setOutput(`Execution error: ${err.response?.data?.error || err.message}`);

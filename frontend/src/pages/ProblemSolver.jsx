@@ -19,7 +19,7 @@ export default function ProblemSolver() {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await axios.get(`http://localhost:5001/api/assessments/questions/${questionId}`);
+        const res = await axios.get(`http://localhost:5003/api/assessments/questions/${questionId}`);
         setQuestion(res.data);
         setCode(res.data.templates?.javascript || "");
       } catch (err) {
@@ -39,7 +39,7 @@ export default function ProblemSolver() {
     setOutput(null);
     setActiveOutputTab("result");
     try {
-      const res = await axios.post("http://localhost:5001/api/assessments/practice/run", {
+      const res = await axios.post("http://localhost:5003/api/assessments/practice/run", {
         questionId, code, language
       });
       setOutput(res.data);
@@ -55,7 +55,7 @@ export default function ProblemSolver() {
     setOutput(null);
     setActiveOutputTab("result");
     try {
-      const res = await axios.post("http://localhost:5001/api/assessments/practice/submit", {
+      const res = await axios.post("http://localhost:5003/api/assessments/practice/submit", {
         questionId, code, language, candidateId
       });
       setOutput(res.data);
@@ -214,7 +214,7 @@ export default function ProblemSolver() {
                   </span>
                 )}
                 <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold ${output.allPassed ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/15 text-red-400 border border-red-500/20'}`}>
-                  {output.allPassed ? (output.mode === "submit" ? "Accepted ✓" : "All Passed") : `Score: ${output.score || Math.round((output.passed/output.total)*100)}%`}
+                  {output.allPassed ? (output.mode === "submit" ? "Accepted" : "All Passed") : `Score: ${output.score || Math.round((output.passed/output.total)*100)}%`}
                 </span>
               </div>
             )}

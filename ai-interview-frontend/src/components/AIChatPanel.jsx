@@ -3,12 +3,13 @@ import React, { useRef, useEffect, useState } from 'react';
 export default function AIChatPanel({
     messages,
     interimText,
+    accumulatedSpeech,
     isListening,
     isThinking,
     isAiSpeaking,
     onStartListening,
     onStopListening,
-    onSendText       // ← new prop: callback(text) to send typed message
+    onSendText
 }) {
     const bottomRef  = useRef(null);
     const inputRef   = useRef(null);
@@ -99,10 +100,12 @@ export default function AIChatPanel({
                 ))}
 
                 {/* Live voice transcription preview */}
-                {interimText && (
+                {(interimText || accumulatedSpeech) && (
                     <div className="flex justify-end">
                         <div className="max-w-[85%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm bg-gray-800/50 text-gray-400 border border-gray-700/30 italic">
-                            {interimText}...
+                            {accumulatedSpeech}
+                            {accumulatedSpeech && interimText && ' '}
+                            {interimText && <span className="opacity-70">{interimText}...</span>}
                         </div>
                     </div>
                 )}

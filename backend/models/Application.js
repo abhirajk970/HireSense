@@ -19,7 +19,12 @@ const applicationSchema = new mongoose.Schema({
   },
   oaWindowStart: { type: Date },
   oaWindowEnd: { type: Date },
-  oaScore: { type: Number, default: 0 }
+  oaScore: { type: Number, default: 0 },
+  assignmentSubmission: {
+    repoLink: String,
+    liveLink: String,
+    submittedAt: Date
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Application", applicationSchema);

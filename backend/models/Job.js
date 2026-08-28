@@ -16,7 +16,13 @@ const jobSchema = new mongoose.Schema({
     endDate: { type: Date },
     advanceMode: { type: String, enum: ["Manual", "Auto"], default: "Manual" },
     advanceTopK: { type: Number, default: 0 },
-    interviewType: { type: String, enum: ["None", "Human", "AI"], default: "None" }
+    interviewType: { type: String, enum: ["None", "Human", "AI"], default: "None" },
+    interviewerType: { type: String, enum: ["Any", "HR", "Technical"], default: "Any" },
+    assignment: {
+      title: String,
+      description: String,
+      pdfUrl: String
+    }
   }],
   interviewQuestionSet: [{
     questionText: String,

@@ -28,18 +28,21 @@ function Login() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.role);
       localStorage.setItem("userId", res.data.userId);
-      localStorage.setItem("userName", res.data.name || (res.data.role === 'candidate' ? 'Candidate' : 'Employer'));
+      localStorage.setItem("userName", res.data.name || res.data.role);
+      if (res.data.companyId) localStorage.setItem("companyId", res.data.companyId);
 
-      res.data.role === "candidate"
-        ? navigate("/candidate")
-        : navigate("/company");
+      if (res.data.role === "candidate")  navigate("/candidate");
+      else if (res.data.role === "company") navigate("/company");
+      else if (res.data.role === "interviewer") navigate("/interviewer");
+      else navigate("/");
     } catch (err) {
       setError(err.response?.data?.msg || "Login failed");
       setLoading(false);
     }
   };
 
-  const isCandidate = role === "candidate";
+  const isCandidate   = role === "candidate";
+  const isInterviewer = role === "interviewer";
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
@@ -57,9 +60,9 @@ function Login() {
 
         <div className="rounded-2xl p-8 backdrop-blur-xl shadow-2xl border" style={{ background: 'var(--bg-card-solid)', borderColor: 'var(--border)' }}>
           <div className="text-center mb-8">
-            <div className={`inline-flex items-center gap-2 ${isCandidate ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-violet-500/10 border-violet-500/20'} border rounded-full px-3 py-1 mb-4`}>
-              <span className={`w-1.5 h-1.5 ${isCandidate ? 'bg-indigo-400' : 'bg-violet-400'} rounded-full`} />
-              <span className={`text-xs font-semibold ${isCandidate ? 'text-indigo-300' : 'text-violet-300'} uppercase tracking-wider`}>{isCandidate ? 'Candidate' : 'Employer'} Portal</span>
+            <div className={`inline-flex items-center gap-2 ${isCandidate ? 'bg-indigo-500/10 border-indigo-500/20' : isInterviewer ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-violet-500/10 border-violet-500/20'} border rounded-full px-3 py-1 mb-4`}>
+              <span className={`w-1.5 h-1.5 ${isCandidate ? 'bg-indigo-400' : isInterviewer ? 'bg-emerald-400' : 'bg-violet-400'} rounded-full`} />
+              <span className={`text-xs font-semibold ${isCandidate ? 'text-indigo-300' : isInterviewer ? 'text-emerald-300' : 'text-violet-300'} uppercase tracking-wider`}>{isCandidate ? 'Candidate' : isInterviewer ? 'Interviewer' : 'Employer'} Portal</span>
             </div>
             <h1 className="text-2xl font-bold mb-1 t-text">Welcome back</h1>
             <p className="text-sm t-text-muted">Enter your credentials to continue</p>

@@ -143,6 +143,71 @@ router.put("/:id/status", async (req, res) => {
     }
 });
 
+// Submit Assignment
+router.post("/:id/assignment", async (req, res) => {
+    try {
+        const { repoLink, liveLink } = req.body;
+        const application = await Application.findByIdAndUpdate(
+            req.params.id,
+            { 
+                assignmentSubmission: {
+                    repoLink,
+                    liveLink,
+                    submittedAt: new Date()
+                }
+            },
+            { new: true }
+        ).populate("jobId");
+        
+        // Notify Employer
+        try {
+            await Notification.create({
+                userId: application.jobId.createdBy,
+                type: "assignment_submitted",
+                title: "Assignment Submitted",
+                message: `Candidate has submitted the assignment for ${application.jobId.title}.`,
+                relatedJobId: application.jobId._id
+            });
+        } catch(e) {}
+
+        res.json(application);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Extend Offer
+router.post("/:id/offer", async (req, res) => {
+    try {
+        const application = await Application.findByIdAndUpdate(
+            req.params.id,
+            { status: "Hired" },
+            { new: true }
+        ).populate("jobId").populate("candidateId");
+
+        if (!application) return res.status(404).json({ msg: "Application not found" });
+
+        // Notify Candidate
+        try {
+            await Notification.create({
+                userId: application.candidateId._id,
+                type: "offer_extended",
+                title: "Job Offer Extended!",
+                message: `Congratulations! You have received a job offer for ${application.jobId.title}. Please check your email for details.`,
+                relatedJobId: application.jobId._id
+            });
+            // Mock Email Sending
+            console.log(`[Email System] Sending Offer Email to ${application.candidateId.email} for role ${application.jobId.title}`);
+        } catch(e) {
+            console.error(e);
+        }
+
+        res.json(application);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Sync OA Final Score
 router.put("/:id/oa-score", async (req, res) => {
     try {
@@ -241,7 +306,7 @@ router.post("/:id/shortlist", async (req, res) => {
 router.get("/candidate/:id", async (req, res) => {
   try {
     const apps = await Application.find({ candidateId: req.params.id })
-        .populate("jobId", "title description location")
+        .populate("jobId", "title description location stages")
         .sort({ createdAt: -1 });
 
     res.json(apps);

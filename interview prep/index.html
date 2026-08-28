@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HireSense — Complete Architecture, Service Deep Dive & Technical Interview Preparation Dossier</title>
+  <meta name="description" content="Ultimate Technical Deep Dive, System Architecture, Codebase Walkthrough, and Interview Defense Guide for the HireSense Platform." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  
+  <!-- Mermaid for Diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });</script>
+
+  <style>
+    /* ==========================================================================
+       1. GLOBAL RESET & DESIGN TOKENS
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary: #060b13;
+      --bg-secondary: #0c1424;
+      --bg-tertiary: #131e36;
+      --bg-card: rgba(18, 30, 54, 0.7);
+      --bg-card-hover: rgba(28, 45, 80, 0.85);
+      
+      --accent-blue: #2563eb;
+      --accent-blue-light: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-teal: #14b8a6;
+      --accent-purple: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(59, 130, 246, 0.3);
+      
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+      --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+      
+      --code-bg: #090e17;
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+    }
+
+    /* Light mode / Print optimized overrides */
+    body.light-theme {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #f1f5f9;
+      --bg-tertiary: #e2e8f0;
+      --bg-card: rgba(255, 255, 255, 0.95);
+      --bg-card-hover: rgba(241, 245, 249, 1);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #64748b;
+      --border-color: rgba(0, 0, 0, 0.1);
+      --border-accent: rgba(37, 99, 235, 0.4);
+      --code-bg: #1e293b;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 15px;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      line-height: 1.7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-blue);
+    }
+
+    /* ==========================================================================
+       2. TOP BAR & NAVIGATION
+       ========================================================================== */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(6, 11, 19, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #fff, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.6rem;
+      background: rgba(37, 99, 235, 0.2);
+      border: 1px solid var(--accent-blue);
+      border-radius: 20px;
+      color: #93c5fd;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .search-box {
+      position: relative;
+      width: 260px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.45rem 0.85rem 0.45rem 2.2rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--accent-blue-light);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    .search-icon {
+      position: absolute;
+      left: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-main);
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--accent-blue);
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), #1d4ed8);
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--accent-blue-light), var(--accent-blue));
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.45);
+    }
+
+    /* ==========================================================================
+       3. MAIN LAYOUT (SIDEBAR + CONTENT)
+       ========================================================================== */
+    .app-container {
+      display: flex;
+      flex: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Sidebar Table of Contents */
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 61px;
+      height: calc(100vh - 61px);
+      overflow-y: auto;
+      padding: 1.5rem 1rem 3rem 1.5rem;
+      border-right: 1px solid var(--border-color);
+      background: rgba(6, 11, 19, 0.4);
+    }
+
+    .toc-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-left: 0.5rem;
+    }
+
+    .toc-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .toc-item a {
+      display: block;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      border-left: 2px solid transparent;
+    }
+
+    .toc-item a:hover, .toc-item a.active {
+      color: #fff;
+      background: var(--bg-tertiary);
+      border-left-color: var(--accent-cyan);
+      padding-left: 1rem;
+    }
+
+    .toc-badge {
+      float: right;
+      font-size: 0.65rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 0.1rem 0.4rem;
+      border-radius: 10px;
+      color: var(--accent-cyan);
+    }
+
+    /* Main Content Area */
+    .content {
+      flex: 1;
+      padding: 2.5rem 3.5rem;
+      max-width: 1300px;
+      overflow-x: hidden;
+    }
+
+    /* ==========================================================================
+       4. HERO COVER SECTION (PRINTABLE TITLE PAGE)
+       ========================================================================== */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(6, 182, 212, 0.08));
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2.5rem;
+      margin-bottom: 3rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    .hero-banner::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 30%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 850px;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .metric-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      text-align: left;
+    }
+
+    .metric-val {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      font-family: 'Fira Code', monospace;
+    }
+
+    .metric-lbl {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ==========================================================================
+       5. CONTENT TYPOGRAPHY & SECTIONS
+       ========================================================================== */
+    section {
+      margin-bottom: 4.5rem;
+      scroll-margin-top: 80px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    body.light-theme .section-title {
+      color: #0f172a;
+    }
+
+    h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 2rem 0 1rem 0;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    body.light-theme h3 {
+      color: #1e293b;
+    }
+
+    h4 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.25rem 0 0.5rem 0;
+      color: var(--accent-blue-light);
+    }
+
+    p {
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      font-size: 0.95rem;
+    }
+
+    ul, ol {
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+
+    strong {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    body.light-theme strong {
+      color: #0f172a;
+    }
+
+    /* Cards & Glass Panels */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(12px);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Concept Education Highlight Box */
+    .edu-box {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.05));
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .edu-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--accent-emerald);
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Architecture Visual Callout */
+    .arch-diagram-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      overflow-x: auto;
+    }
+
+    /* Math Formulas */
+    .math-formula {
+      background: var(--bg-secondary);
+      border-left: 3px solid var(--accent-purple);
+      padding: 1rem 1.25rem;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-family: 'Fira Code', monospace;
+      color: #c4b5fd;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      overflow-x: auto;
+    }
+
+    /* Code Snippets */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.2rem;
+      margin: 1rem 0 1.5rem 0;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+      position: relative;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.88em;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: #93c5fd;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+    }
+
+    .code-badge {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.8rem;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: var(--bg-secondary);
+      color: #fff;
+      font-weight: 700;
+      padding: 0.85rem 1.2rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    body.light-theme th {
+      color: #0f172a;
+    }
+
+    td {
+      padding: 0.85rem 1.2rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    tr:hover {
+      background: var(--bg-card-hover);
+    }
+
+    /* ==========================================================================
+       6. INTERVIEW Q&A ACCORDIONS & FLASHCARDS
+       ========================================================================== */
+    .qa-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .qa-header {
+      padding: 1.25rem 1.5rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      user-select: none;
+    }
+
+    .qa-header:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .qa-question-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    body.light-theme .qa-question-text {
+      color: #0f172a;
+    }
+
+    .qa-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .badge-arch { background: rgba(37, 99, 235, 0.2); color: #93c5fd; border: 1px solid var(--accent-blue); }
+    .badge-ai { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid var(--accent-purple); }
+    .badge-webrtc { background: rgba(20, 184, 166, 0.2); color: #5eead4; border: 1px solid var(--accent-teal); }
+    .badge-db { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid var(--accent-amber); }
+    .badge-beh { background: rgba(244, 63, 94, 0.2); color: #fda4af; border: 1px solid var(--accent-rose); }
+
+    .qa-chevron {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      transition: transform 0.3s;
+    }
+
+    .qa-card.open .qa-chevron {
+      transform: rotate(180deg);
+      color: var(--accent-cyan);
+    }
+
+    .qa-body {
+      padding: 0 1.5rem 1.5rem 1.5rem;
+      display: none;
+      border-top: 1px solid var(--border-color);
+      background: rgba(6, 11, 19, 0.3);
+    }
+
+    .qa-card.open .qa-body {
+      display: block;
+    }
+
+    .answer-lead {
+      background: rgba(37, 99, 235, 0.08);
+      border-left: 3px solid var(--accent-blue-light);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-weight: 600;
+      color: #93c5fd;
+    }
+
+    .pro-tip {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      margin: 1rem 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      color: #fcd34d;
+      font-size: 0.88rem;
+    }
+
+    /* Flashcard Section */
+    .flashcard-deck {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .flashcard {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      cursor: pointer;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.3s;
+    }
+
+    .flashcard:hover {
+      border-color: var(--accent-purple);
+      box-shadow: 0 8px 20px rgba(139, 92, 246, 0.2);
+      transform: translateY(-3px);
+    }
+
+    .flashcard-q {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+
+    .flashcard-a {
+      display: none;
+      font-size: 0.85rem;
+      color: #c4b5fd;
+      background: var(--bg-tertiary);
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--accent-purple);
+    }
+
+    .flashcard.revealed .flashcard-a {
+      display: block;
+    }
+
+    .flashcard-btn {
+      align-self: flex-start;
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+
+    /* ==========================================================================
+       7. PRINT / PDF STYLESHEET (CRITICAL FOR EXPORT)
+       ========================================================================== */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 1.5cm 1.2cm;
+      }
+
+      body {
+        background: #ffffff !important;
+        color: #111827 !important;
+        font-size: 10.5pt;
+        line-height: 1.5;
+      }
+
+      .top-nav, .sidebar, .btn, .search-box, .toc-badge, .qa-chevron, .flashcard-btn {
+        display: none !important;
+      }
+
+      .app-container {
+        display: block !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+      }
+
+      .content {
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+
+      .hero-banner {
+        background: #f1f5f9 !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+        page-break-after: always;
+        padding: 2.5cm 1.5cm !important;
+        margin-bottom: 2cm !important;
+      }
+
+      .hero-title {
+        color: #0f172a !important;
+        -webkit-text-fill-color: #0f172a !important;
+        font-size: 26pt !important;
+      }
+
+      .hero-subtitle {
+        color: #475569 !important;
+        font-size: 13pt !important;
+      }
+
+      .metric-card {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+
+      .metric-val {
+        color: #2563eb !important;
+      }
+
+      section {
+        page-break-before: always;
+        margin-bottom: 2cm !important;
+      }
+
+      .section-title {
+        color: #0f172a !important;
+        font-size: 18pt !important;
+      }
+
+      .section-num {
+        background: #2563eb !important;
+        color: #ffffff !important;
+      }
+
+      .card, .edu-box, .arch-diagram-box {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+      }
+
+      .qa-card {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        margin-bottom: 1cm !important;
+        break-inside: avoid;
+      }
+
+      .qa-body {
+        display: block !important;
+        background: #ffffff !important;
+      }
+
+      .qa-question-text {
+        color: #0f172a !important;
+        font-size: 12pt !important;
+      }
+
+      .answer-lead {
+        background: #eff6ff !important;
+        border-left: 3px solid #2563eb !important;
+        color: #1e3a8a !important;
+      }
+
+      .pro-tip {
+        background: #fefce8 !important;
+        border: 1px solid #fef08a !important;
+        color: #854d0e !important;
+      }
+
+      pre {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+        break-inside: avoid;
+      }
+
+      code {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+      }
+
+      th {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+      }
+
+      td {
+        color: #334155 !important;
+      }
+
+      .flashcard-a {
+        display: block !important;
+        background: #f8fafc !important;
+        color: #334155 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       TOP NAVIGATION BAR
+       ========================================================================== -->
+  <header class="top-nav">
+    <div class="brand-group">
+      <div class="brand-logo">HS</div>
+      <div>
+        <div class="brand-title">HireSense Engineering</div>
+      </div>
+      <span class="brand-badge">Interview Dossier & Master Guide</span>
+    </div>
+
+    <div class="nav-actions">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search concepts, questions, APIs..." onkeyup="filterContent()" />
+      </div>
+
+      <button class="btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+        <span id="themeIcon">🌓</span> Theme
+      </button>
+
+      <button class="btn btn-primary" onclick="window.print()" title="Generate Printable PDF Dossier">
+        <span>🖨️</span> Export to PDF
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN APP CONTAINER
+       ========================================================================== -->
+  <div class="app-container">
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar">
+      <div class="toc-title">Table of Contents</div>
+      <ul class="toc-list">
+        <li class="toc-item"><a href="#overview" class="active">1. System Overview & Vision <span class="toc-badge">Core</span></a></li>
+        <li class="toc-item"><a href="#architecture">2. Architecture & Topology <span class="toc-badge">Infra</span></a></li>
+        <li class="toc-item"><a href="#fundamentals">3. Deep Tech Theory (Teach Me) <span class="toc-badge">Theory</span></a></li>
+        <li class="toc-item"><a href="#service-backend">4. Core API Backend <span class="toc-badge">:5000</span></a></li>
+        <li class="toc-item"><a href="#service-ai-interview">5. AI Interview Service <span class="toc-badge">:5001</span></a></li>
+        <li class="toc-item"><a href="#service-ai-python">6. Python ML & Whisper STT <span class="toc-badge">:8000</span></a></li>
+        <li class="toc-item"><a href="#service-oa">7. Online Assessment & Proctor <span class="toc-badge">:5003</span></a></li>
+        <li class="toc-item"><a href="#service-webrtc">8. WebRTC Collaborative IDE <span class="toc-badge">:5002</span></a></li>
+        <li class="toc-item"><a href="#state-machine">9. 9-Stage AI State Machine <span class="toc-badge">FSM</span></a></li>
+        <li class="toc-item"><a href="#interview-qa-arch">10. Q&A: Architecture & Infra <span class="toc-badge">10 Qs</span></a></li>
+        <li class="toc-item"><a href="#interview-qa-ai">11. Q&A: AI, LLM & Prompting <span class="toc-badge">10 Qs</span></a></li>
+        <li class="toc-item"><a href="#interview-qa-webrtc">12. Q&A: Real-Time & Security <span class="toc-badge">8 Qs</span></a></li>
+        <li class="toc-item"><a href="#interview-qa-behavioral">13. Q&A: Pitch & Leadership <span class="toc-badge">Behavioral</span></a></li>
+        <li class="toc-item"><a href="#flashcards">14. Interactive Flashcards <span class="toc-badge">Study</span></a></li>
+      </ul>
+    </aside>
+
+    <!-- CONTENT BODY -->
+    <main class="content">
+
+      <!-- HERO SECTION -->
+      <div class="hero-banner">
+        <span class="hero-tag">Comprehensive Production Dossier</span>
+        <h1 class="hero-title">HireSense: AI-Powered Autonomous Talent Acquisition & Technical Interview Platform</h1>
+        <p class="hero-subtitle">
+          An in-depth architectural breakdown, service-by-service engineering analysis, theoretical fundamentals handbook, and master interview defense guide covering distributed message queues, local LLMs, WebRTC, computer vision proctoring, and deterministic state machines.
+        </p>
+
+        <div class="hero-metrics">
+          <div class="metric-card">
+            <div class="metric-val">6 Services</div>
+            <div class="metric-lbl">Microservice Topology</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val">LLaMA 3 8B</div>
+            <div class="metric-lbl">Local LLM Engine</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val">Kafka + Redis</div>
+            <div class="metric-lbl">Event & Pub/Sub Mesh</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val">WebRTC P2P</div>
+            <div class="metric-lbl">Live Video & Shared IDE</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val">30+ Q&As</div>
+            <div class="metric-lbl">Master Interview Bank</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================================
+           SECTION 1: OVERVIEW & CORE PHILOSOPHY
+           ====================================================================== -->
+      <section id="overview">
+        <div class="section-header">
+          <div class="section-num">1</div>
+          <h2 class="section-title">System Overview & Core Philosophy</h2>
+        </div>
+
+        <div class="card">
+          <h3>The Problem HireSense Solves</h3>
+          <p>
+            Traditional technical hiring suffers from three massive bottlenecks:
+          </p>
+          <ul>
+            <li><strong>Engineering Time Drain:</strong> Senior engineers spend 15–20 hours a week conducting repetitive preliminary DSA phone screens and grading standard assessments.</li>
+            <li><strong>High Recurring Cloud AI Costs:</strong> Cloud LLM APIs (like GPT-4) charge substantial per-token pricing and cloud speech APIs charge per-minute costs, making high-volume candidate screening prohibitively expensive and creating data privacy/compliance risks.</li>
+            <li><strong>The "Chatbot Hallucination" Trap:</strong> Naive AI interview tools let raw LLMs grade code. LLMs frequently hallucinate correctness, miss subtle algorithmic edge cases, or approve broken solutions because the code "looks plausible."</li>
+          </ul>
+        </div>
+
+        <div class="edu-box">
+          <div class="edu-header">💡 Core Design Philosophy of HireSense</div>
+          <p>
+            <strong>"HireSense is NOT a chatbot. It is a deterministic evaluation engine with AI assistance."</strong>
+          </p>
+          <p>
+            The platform strictly decouples <strong>Deterministic Code Execution</strong> (test cases, sandboxed processes, memory limits, and runtime validation) from <strong>LLM-Assisted Guidance</strong> (intuition comprehension, progressive hints, complexity follow-ups, and behavioral communication). The AI guides the interview; the containerized sandbox decides if the code actually works.
+          </p>
+        </div>
+
+        <div class="card-grid">
+          <div class="card">
+            <h4>1. Autonomous AI Technical Interviewer</h4>
+            <p>Runs a structured 9-stage technical interview powered by a local LLaMA 3 8B model via Ollama. Listens to candidate intuition via offline Faster-Whisper speech-to-text, provides 4-level progressive hints with automated scoring penalties, and runs sandboxed tests.</p>
+          </div>
+          <div class="card">
+            <h4>2. AI-Proctored Online Assessments</h4>
+            <p>Full-screen locked assessment platform with real-time video proctoring, tab switch detection, copy-paste inhibitors, automated MCQ evaluation, and multi-language code compilation.</p>
+          </div>
+          <div class="card">
+            <h4>3. Real-Time Collaborative Interview Room</h4>
+            <p>Peer-to-peer WebRTC video/audio conferencing combined with an operational code editor synchronized in real time over Socket.io and Redis for human recruiter interviews.</p>
+          </div>
+          <div class="card">
+            <h4>4. NLP Resume & ATS Screening Engine</h4>
+            <p>Extracts structured entities (organizations, locations, CGPA, years of experience) with spaCy and calculates mathematical TF-IDF Cosine Similarity against job descriptions.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 2: ARCHITECTURE & MICROSERVICES TOPOLOGY
+           ====================================================================== -->
+      <section id="architecture">
+        <div class="section-header">
+          <div class="section-num">2</div>
+          <h2 class="section-title">Architecture & Distributed Topology</h2>
+        </div>
+
+        <p>
+          HireSense is engineered as a decoupled, event-driven microservices architecture. Each service operates with isolated dependencies, dedicated database connections, and specialized compute profiles.
+        </p>
+
+        <div class="arch-diagram-box">
+          <div class="mermaid">
+graph TD
+    Client["React Portals (Candidate / Recruiter / OA / AI Room)"] -->|HTTP / REST| CoreAPI["Core Backend API (:5000)"]
+    Client -->|Socket.io + WebRTC| HumanInt["Interview Microservice (:5002)"]
+    Client -->|Socket.io + HTTP| AIInt["AI Interview Service (:5001)"]
+    Client -->|HTTP / Audio Base64| PyAI["Python ML & Whisper STT (:8000)"]
+    Client -->|HTTP / Proctor Logs| OA["Online Assessment Service (:5003)"]
+
+    subgraph "Core Backend Services"
+        CoreAPI --> MongoCore[("MongoDB: Users, Jobs, Applications")]
+        CoreAPI --> CronWorker["1-Min Auto-Scheduler & Reminder Cron"]
+    end
+
+    subgraph "Event-Driven & Cache Backplane"
+        AIInt -->|Redis Adapter| Redis[("Redis 7: Session State & Pub/Sub")]
+        HumanInt -->|Redis Adapter| Redis
+        AIInt -->|Publish Execution| Kafka["Apache Kafka: code-execution-requests"]
+        Kafka --> CodeWorker["Kafka Worker: codeRunnerWorker.js"]
+        CodeWorker --> CodeSandbox["Sandboxed Node/Python Child Process"]
+        CodeWorker -->|Publish Results| KafkaRes["Kafka: code-execution-results"]
+        KafkaRes --> AIInt
+    end
+
+    subgraph "AI & NLP Services"
+        PyAI --> FasterWhisper["Faster-Whisper (Int8 CPU)"]
+        PyAI --> SpaCyNLP["spaCy en_core_web_md (NER)"]
+        PyAI --> TFIDF["Scikit-Learn TF-IDF Cosine Sim"]
+        AIInt --> Ollama["Ollama Local LLaMA 3 8B"]
+    end
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Service Name</th>
+                <th>Port</th>
+                <th>Tech Stack</th>
+                <th>Primary Responsibilities</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Core Backend</strong></td>
+                <td><code>5000</code></td>
+                <td>Node.js, Express, Mongoose, JWT</td>
+                <td>Authentication, RBAC, Job postings, Application pipeline state machine, automated 1-min cron notifications.</td>
+              </tr>
+              <tr>
+                <td><strong>AI Interview Backend</strong></td>
+                <td><code>5001</code></td>
+                <td>Node.js, Socket.io, Ollama (LLaMA 3), KafkaJS</td>
+                <td>Autonomous DSA interview state machine, conversational prompts, progressive hints, code evaluation dispatch.</td>
+              </tr>
+              <tr>
+                <td><strong>Collaborative Interview</strong></td>
+                <td><code>5002</code></td>
+                <td>Node.js, Socket.io, WebRTC ICE signaling</td>
+                <td>P2P video/audio conferencing, collaborative live code syncing, human interviewer evaluation notes.</td>
+              </tr>
+              <tr>
+                <td><strong>Online Assessment (OA)</strong></td>
+                <td><code>5003</code></td>
+                <td>Node.js, Express, MongoDB</td>
+                <td>Timed assessment delivery, question bank management, anti-cheating proctoring event logs, auto-grading.</td>
+              </tr>
+              <tr>
+                <td><strong>DSA Practice Backend</strong></td>
+                <td><code>5004</code></td>
+                <td>Node.js, Express, MongoDB</td>
+                <td>Solo candidate algorithm practice sandbox, solution tracking, difficulty filtering.</td>
+              </tr>
+              <tr>
+                <td><strong>Python AI / ML Service</strong></td>
+                <td><code>8000</code></td>
+                <td>FastAPI, Faster-Whisper, spaCy, Scikit-Learn</td>
+                <td>PDF resume parsing, entity extraction, TF-IDF ATS match scoring, local Whisper int8 speech transcription.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 3: TEACH ME EVERYTHING USED (DEEP THEORY)
+           ====================================================================== -->
+      <section id="fundamentals">
+        <div class="section-header">
+          <div class="section-num">3</div>
+          <h2 class="section-title">Deep Technical Theory & Underlying Mechanics ("Teach Me Everything Used")</h2>
+        </div>
+
+        <p>
+          To master your technical interview, you must understand not just <em>what</em> code was written, but <em>why</em> each underlying technology works at a systems level.
+        </p>
+
+        <!-- CONCEPT 1: KAFKA -->
+        <div class="card">
+          <h3>1. Apache Kafka & Event-Driven Asynchronous Processing</h3>
+          <p>
+            <strong>What is Kafka?</strong> Apache Kafka is a distributed, horizontally scalable, partition-tolerant event streaming platform. Unlike traditional HTTP request-response architectures or in-memory message queues, Kafka stores an immutable, append-only commit log on disk.
+          </p>
+          <div class="edu-box">
+            <div class="edu-header">🔍 Why did we choose Kafka over synchronous HTTP for Code Execution?</div>
+            <ul>
+              <li><strong>Decoupling Compute from Socket Threads:</strong> Running user code is CPU-heavy and dangerous. If 1,000 candidates click "Run Code" simultaneously, handling that inside the Express HTTP server thread will exhaust the Node.js event loop and drop socket connections.</li>
+              <li><strong>Backpressure & Spike Buffering:</strong> Kafka buffers execution requests in the <code>code-execution-requests</code> topic. Dedicated worker pools pull jobs at their own safe processing rate without crashing the server.</li>
+              <li><strong>Fault Tolerance & Replayability:</strong> If a code runner worker crashes mid-execution, Kafka offsets ensure the message remains in the topic and is reassigned to another active worker in the consumer group.</li>
+            </ul>
+          </div>
+          <h4>Kafka Core Concepts in HireSense:</h4>
+          <ul>
+            <li><strong>Producer:</strong> The AI Interview service (<code>kafkaClient.publishMessage</code>) sends a serialized JSON payload containing <code>executionId, roomId, code, language</code> to topic <code>code-execution-requests</code>.</li>
+            <li><strong>Consumer Group:</strong> <code>code-runner-group</code> spawns workers (<code>codeRunnerWorker.js</code>) that read messages, compile code against test cases in isolation, update MongoDB, and emit results back to Socket.io and the <code>code-execution-results</code> topic.</li>
+          </ul>
+        </div>
+
+        <!-- CONCEPT 2: REDIS & SOCKET.IO ADAPTER -->
+        <div class="card">
+          <h3>2. Redis In-Memory Caching & Socket.io Horizontal Pub/Sub Adapter</h3>
+          <p>
+            <strong>The Multi-Instance WebSocket Problem:</strong> WebSockets maintain persistent, stateful TCP connections between a browser and a specific backend server node. If you scale your application to 4 backend instances behind a load balancer, Candidate A might connect to Node 1 while Interviewer B connects to Node 2. Node 1 cannot send a WebSocket packet directly to a client connected to Node 2!
+          </p>
+          <div class="edu-box">
+            <div class="edu-header">⚡ How the Socket.io Redis Adapter Solves This</div>
+            <p>
+              HireSense integrates <code>@socket.io/redis-adapter</code> with duplicate Redis clients (<code>pubClient</code> and <code>subClient</code>). When a server emits <code>io.to(roomId).emit(...)</code>, the Redis adapter intercepts it, publishes the message to a shared Redis channel, and all other server instances receive the event and broadcast it to their locally connected socket clients.
+            </p>
+          </div>
+          <pre><code class="language-javascript">// ai-interview-backend/server.js
+const pubClient = createClient({ url: process.env.REDIS_URL || "redis://localhost:6379" });
+const subClient = pubClient.duplicate();
+
+Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+  io.adapter(createAdapter(pubClient, subClient));
+  console.log("🔌 Socket.io Redis Adapter connected");
+});</code><span class="code-badge">JavaScript</span></pre>
+        </div>
+
+        <!-- CONCEPT 3: WEBRTC & SIGNALING -->
+        <div class="card">
+          <h3>3. WebRTC (Web Real-Time Communication) & ICE Signaling</h3>
+          <p>
+            <strong>What is WebRTC?</strong> WebRTC allows direct, peer-to-peer (P2P) high-definition video, audio, and data streaming between two browsers with sub-100ms latency without routing high-bandwidth media streams through the application servers.
+          </p>
+          <div class="edu-box">
+            <div class="edu-header">📡 The Complete WebRTC Handshake Lifecycle</div>
+            <ol>
+              <li><strong>SDP Offer Creation:</strong> Candidate A calls <code>peerConnection.createOffer()</code> which inspects local media capabilities (H.264, VP8/VP9, Opus audio codec, resolutions) and creates a Session Description Protocol (SDP) offer.</li>
+              <li><strong>Signaling Transport:</strong> Candidate A sets <code>setLocalDescription(offer)</code> and sends the SDP offer string to the signaling server (<code>interview-backend</code> port 5002 via Socket.io <code>socket.emit('offer', offer, roomId, toSocketId)</code>).</li>
+              <li><strong>SDP Answer:</strong> Interviewer B receives the offer, sets <code>setRemoteDescription(offer)</code>, calls <code>peerConnection.createAnswer()</code>, sets <code>setLocalDescription(answer)</code>, and sends the answer back over Socket.io. Candidate A sets <code>setRemoteDescription(answer)</code>.</li>
+              <li><strong>ICE Candidate Exchange (NAT Traversal):</strong> Browsers are behind home/corporate NAT firewalls. STUN (Session Traversal Utilities for NAT) servers discover public IP/port combinations. As candidate network pathways are discovered, browsers emit <code>onicecandidate</code> events, relay them over Socket.io, and call <code>peerConnection.addIceCandidate(candidate)</code>.</li>
+              <li><strong>Direct Media Stream:</strong> Once an ICE path matches, a direct encrypted SRTP (Secure Real-time Transport Protocol) media pipe opens directly between the two users!</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- CONCEPT 4: NLP, TF-IDF & COSINE SIMILARITY -->
+        <div class="card">
+          <h3>4. Natural Language Processing & Mathematical Vector Matching</h3>
+          <p>
+            In <code>ai-service/main.py</code>, resume screening utilizes two complementary NLP methodologies: Rule-Based/Statistical Entity Extraction and Vector-Space Semantic Matching.
+          </p>
+          
+          <h4>A. Named Entity Recognition (NER) with spaCy</h4>
+          <p>
+            Using spaCy's pre-trained transformer/CNN model <code>en_core_web_md</code>, the pipeline processes the extracted raw text stream and identifies linguistic entity tokens tagged as <code>ORG</code> (Companies, universities) and <code>GPE</code> (Geopolitical entities/cities/countries).
+          </p>
+
+          <h4>B. TF-IDF & Cosine Similarity Mathematics</h4>
+          <p>
+            To evaluate candidate fit against a job description without incurring cloud API costs, we compute the TF-IDF representation and Cosine Similarity:
+          </p>
+
+          <div class="math-formula">
+            \text{TF}(t, d) = \frac{\text{Count of term } t \text{ in document } d}{\text{Total terms in } d}
+            <br><br>
+            \text{IDF}(t, D) = \log\left(\frac{1 + |D|}{1 + |\{d \in D : t \in d\}|}\right) + 1
+            <br><br>
+            \text{Cosine Similarity}(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \|\mathbf{v}\|_2} = \frac{\sum_{i=1}^n u_i v_i}{\sqrt{\sum_{i=1}^n u_i^2} \sqrt{\sum_{i=1}^n v_i^2}}
+          </div>
+          <p>
+            Cosine similarity measures the cosine of the angle between two high-dimensional vectors. If the resume and job description share high-importance keyword distributions, the angle approaches $0^\circ$ ($\cos 0^\circ = 1.0$), resulting in a 100% semantic alignment score.
+          </p>
+        </div>
+
+        <!-- CONCEPT 5: FASTER-WHISPER & AUDIO DSP -->
+        <div class="card">
+          <h3>5. Faster-Whisper, CTranslate2 & Digital Signal Processing (DSP)</h3>
+          <p>
+            <strong>Why Faster-Whisper?</strong> Standard OpenAI Whisper in PyTorch requires heavy GPU memory and runs slowly on CPU. HireSense uses <code>faster-whisper</code>, a reimplementation using <strong>CTranslate2</strong> (a fast inference engine for Transformer models).
+          </p>
+          <div class="edu-box">
+            <div class="edu-header">🎙️ Audio Processing Pipeline (Inside main.py)</div>
+            <ol>
+              <li><strong>Base64 Ingestion:</strong> Browser records candidate speech via Web Audio API, packages it into a 16kHz WAV format, and POSTs base64 encoded audio.</li>
+              <li><strong>PCM Normalization:</strong> 16-bit integer PCM audio samples (ranging from $-32768$ to $+32767$) are normalized into Float32 values $[-1.0, 1.0]$ using <code>data.astype(np.float32) / 32768.0</code>.</li>
+              <li><strong>Int8 Quantization:</strong> Model weights are quantized to 8-bit integers (reducing memory bandwidth by 75% and accelerating CPU inference by 4x).</li>
+              <li><strong>Beam Search Decoding:</strong> Whisper transcribes with <code>beam_size=5</code>, generating clean text in under 400ms locally on standard CPU hardware with zero API bill.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- CONCEPT 6: CODE SANDBOX SECURITY -->
+        <div class="card">
+          <h3>6. Sandboxed Code Execution & Threat Mitigation</h3>
+          <p>
+            Running arbitrary user code presents massive security vectors: Infinite loops, fork bombs, reading <code>/etc/passwd</code> or <code>.env</code> files, and network exfiltration.
+          </p>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Attack Vector</th>
+                  <th>HireSense Defense Implementation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Infinite Loops / High CPU (TLE)</strong></td>
+                  <td>Enforces a strict <code>5000ms</code> hardware timer in <code>codeRunner.js</code>. If execution exceeds limit, process is terminated immediately via <code>child.kill("SIGKILL")</code> and marked as Time Limit Exceeded.</td>
+                </tr>
+                <tr>
+                  <td><strong>Network Data Exfiltration</strong></td>
+                  <td>Unsets environment network variables (<code>http_proxy</code>, <code>https_proxy</code>) in spawned child process env to isolate socket connections.</td>
+                </tr>
+                <tr>
+                  <td><strong>Disk Clutter & Collision</strong></td>
+                  <td>Writes scripts to temporary OS paths using cryptographically secure UUIDs (<code>hiresense_${randomUUID()}.js</code>) and cleans up synchronously with <code>fs.unlinkSync()</code> in a <code>finally</code> block.</td>
+                </tr>
+                <tr>
+                  <td><strong>Deterministic Verification</strong></td>
+                  <td>Injects a test harness wrapper that passes input cases, serializes return values with <code>JSON.stringify</code>, and compares against strict expected output.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 4: SERVICE DEEP DIVE - CORE BACKEND
+           ====================================================================== -->
+      <section id="service-backend">
+        <div class="section-header">
+          <div class="section-num">4</div>
+          <h2 class="section-title">Service Deep Dive: Core API Backend (<code>backend/</code>)</h2>
+        </div>
+
+        <div class="card">
+          <h3>Responsibilities & Core Architecture</h3>
+          <p>
+            The Core Backend is the central administrative engine of HireSense. It handles User Identity, Role-Based Access Control (RBAC), Job Postings, Application Lifecycle State Machines, and Automated Background Schedulers.
+          </p>
+          
+          <h4>Key Database Schemas (MongoDB)</h4>
+          <ul>
+            <li><strong>User Model (<code>models/User.js</code>):</strong> Stores credentials with bcrypt hashing, user roles (<code>candidate</code>, <code>recruiter</code>, <code>interviewer</code>, <code>admin</code>), professional skills, experience, and profile metadata.</li>
+            <li><strong>Job Model (<code>models/Job.js</code>):</strong> Company postings, role descriptions, required skills, salary ranges, and hiring pipeline stages (e.g. Resume Screening -> OA -> AI Interview -> Final Round).</li>
+            <li><strong>Application Model (<code>models/Application.js</code>):</strong> Tracks candidate progression through stages (<code>Applied</code> -> <code>Shortlisted</code> -> <code>OA_Passed</code> -> <code>Interview_Scheduled</code> -> <code>Offered</code> -> <code>Rejected</code>) with dynamic score aggregations.</li>
+            <li><strong>Interview Model (<code>models/Interview.js</code>):</strong> Schedules technical rounds, links room IDs, records assigned interviewers, tracks completion timestamps, and stores proctor logs.</li>
+          </ul>
+
+          <h4>Automated Scheduling & Reminder Engine (<code>backend/cron.js</code>)</h4>
+          <p>
+            A persistent 1-minute cron job executes <code>node-cron</code> to eliminate manual recruiter overhead:
+          </p>
+          <ul>
+            <li><strong>Smart Conflict-Free Slot Allocator (<code>findNextWorkingSlot</code>):</strong> Automatically finds the earliest available business hour slot (Monday–Friday, 09:00–18:00) for human interviewers, ensuring no existing interview overlaps within a $\pm 30\text{ min}$ buffer window.</li>
+            <li><strong>Two-Stage Push Notifications:</strong> Automatically dispatches notifications at $T-2\text{ hours}$ (Preparation reminder) and $T-5\text{ minutes}$ (Activates the live "Join Room" button).</li>
+            <li><strong>Auto-Expiry Daemon:</strong> Automatically marks scheduled interviews as <code>Expired</code> if unjoined 60 minutes after the scheduled time, releasing reserved interviewer calendars.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 5: SERVICE DEEP DIVE - AI INTERVIEW SERVICE
+           ====================================================================== -->
+      <section id="service-ai-interview">
+        <div class="section-header">
+          <div class="section-num">5</div>
+          <h2 class="section-title">Service Deep Dive: AI Interview Microservice (<code>ai-interview-backend/</code>)</h2>
+        </div>
+
+        <div class="card">
+          <h3>Local LLaMA 3 Architecture & LLM Service Design</h3>
+          <p>
+            Located in <code>services/llmService.js</code>, this service orchestrates local inference with LLaMA 3 8B via Ollama's HTTP API (<code>POST http://localhost:11434/api/chat</code>).
+          </p>
+
+          <div class="edu-box">
+            <div class="edu-header">🧠 Advanced Prompt Engineering & Context Management Techniques</div>
+            <ol>
+              <li><strong>Context Degradation Prevention (History Compaction):</strong> When conversations exceed 6 exchanges, older messages are summarized into a concise 2-sentence technical digest using a secondary fast LLM pass, keeping context under token limits.</li>
+              <li><strong>Candidate Response Compression:</strong> Raw speech answers are compressed into 1 sentence of core technical facts to eliminate verbal filler words before prompt insertion.</li>
+              <li><strong>Affirmation Stripping:</strong> A regex filter (<code>validateAndFormatOutput</code>) strips enthusiastic validations (e.g. <em>"Great job!", "Awesome!", "Perfect!"</em>) to maintain a realistic, objective, and neutral interviewer demeanor.</li>
+              <li><strong>Single Question Enforcement:</strong> Regex and prompt delimiters ensure the AI asks strictly one technical question per conversational turn, preventing candidate cognitive overload.</li>
+            </ol>
+          </div>
+
+          <h4>Progressive 4-Level Hint Architecture</h4>
+          <p>
+            If a candidate gets stuck during the intuition or coding phase, the system provides structured, progressive hints rather than giving away answers:
+          </p>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hint Level</th>
+                  <th>Category</th>
+                  <th>Example Output</th>
+                  <th>Score Penalty</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Level 1</strong></td>
+                  <td>Directional</td>
+                  <td><em>"Think about how we can avoid checking all pairs with an $O(N^2)$ brute force."</em></td>
+                  <td>-5%</td>
+                </tr>
+                <tr>
+                  <td><strong>Level 2</strong></td>
+                  <td>Structural</td>
+                  <td><em>"Could an auxiliary data structure like a Hash Map help us store previous lookups?"</em></td>
+                  <td>-10%</td>
+                </tr>
+                <tr>
+                  <td><strong>Level 3</strong></td>
+                  <td>Algorithmic</td>
+                  <td><em>"For each number $X$, check if the complement $(\text{target} - X)$ was already seen."</em></td>
+                  <td>-15%</td>
+                </tr>
+                <tr>
+                  <td><strong>Level 4</strong></td>
+                  <td>Near-Solution</td>
+                  <td><em>"Store <code>map[target - nums[i]] = i</code> as you iterate through the array once."</em></td>
+                  <td>-20%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Deterministic Scoring Engine</h4>
+          <p>
+            The final evaluation score is calculated with weighted composite metrics:
+          </p>
+          <div class="math-formula">
+            \text{Final Score} = (0.70 \times \text{Code Correctness}) + (0.15 \times \text{Intuition}) + (0.10 \times \text{Complexity}) + (0.05 \times \text{Communication}) - \text{Hint Penalties}
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 6: SERVICE DEEP DIVE - PYTHON AI SERVICE
+           ====================================================================== -->
+      <section id="service-ai-python">
+        <div class="section-header">
+          <div class="section-num">6</div>
+          <h2 class="section-title">Service Deep Dive: Python ML & Whisper STT (<code>ai-service/</code>)</h2>
+        </div>
+
+        <div class="card">
+          <h3>FastAPI Architecture & Endpoints</h3>
+          <p>
+            The Python AI service (<code>main.py</code>) provides high-performance machine learning utilities via FastAPI, leveraging native C++ bindings for NLP and speech recognition.
+          </p>
+
+          <div class="card-grid">
+            <div class="card">
+              <h4>Endpoint: <code>POST /parse-resume</code></h4>
+              <p>Accepts multipart PDF upload and optional job description string. Uses <code>pdfplumber</code> to extract text, runs spaCy NER to extract organizations and locations, regex patterns for GPA/years of experience, and computes TF-IDF Cosine Similarity score.</p>
+            </div>
+            <div class="card">
+              <h4>Endpoint: <code>POST /transcribe</code></h4>
+              <p>Accepts base64 encoded audio payload, converts 16-bit PCM to normalized Float32 array, and performs local speech-to-text inference with <code>faster-whisper</code> (model <code>tiny.en</code> on CPU with <code>int8</code> quantization).</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 7: SERVICE DEEP DIVE - ONLINE ASSESSMENT & PROCTORING
+           ====================================================================== -->
+      <section id="service-oa">
+        <div class="section-header">
+          <div class="section-num">7</div>
+          <h2 class="section-title">Service Deep Dive: Online Assessment & AI Proctoring (<code>oa-backend/</code>)</h2>
+        </div>
+
+        <div class="card">
+          <h3>Anti-Cheating Security Architecture</h3>
+          <p>
+            The Online Assessment service (<code>oa-backend/</code> port 5003 and <code>oa-frontend/</code>) delivers timed coding and MCQ exams with strict automated proctoring guards:
+          </p>
+          <ul>
+            <li><strong>Full-Screen Lock & Blur Detection:</strong> Listens for HTML5 Fullscreen API changes and <code>window.onblur</code> / <code>document.visibilitychange</code> events. If a candidate leaves the exam tab, a violation warning is issued.</li>
+            <li><strong>Proctor Anomaly Logging:</strong> Every tab switch, copy attempt, and suspicious webcam movement increments a violation counter and logs timestamped events in MongoDB.</li>
+            <li><strong>Automated Disqualification:</strong> If violations exceed the recruiter-configured threshold (e.g. > 3 tab switches), the assessment automatically forces submission and flags the candidate as <code>Suspicious / Disqualified</code> in the recruiter dashboard.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 8: SERVICE DEEP DIVE - WEBRTC COLLABORATIVE INTERVIEW
+           ====================================================================== -->
+      <section id="service-webrtc">
+        <div class="section-header">
+          <div class="section-num">8</div>
+          <h2 class="section-title">Service Deep Dive: WebRTC Collaborative Interview (<code>interview-backend/</code>)</h2>
+        </div>
+
+        <div class="card">
+          <h3>Live Collaborative IDE & Video Mesh</h3>
+          <p>
+            Built for human recruiter interviews (port 5002), this service integrates:
+          </p>
+          <ul>
+            <li><strong>Signaling Server:</strong> Relays <code>offer</code>, <code>answer</code>, and <code>ice-candidate</code> payloads between peers via Socket.io rooms.</li>
+            <li><strong>Operational Code Synchronization:</strong> Emits <code>code-change</code> and <code>language-change</code> events with room scoping, keeping the Monaco code editor synchronized between interviewer and candidate in real-time.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 9: 9-STAGE AI STATE MACHINE
+           ====================================================================== -->
+      <section id="state-machine">
+        <div class="section-header">
+          <div class="section-num">9</div>
+          <h2 class="section-title">The 9-Stage AI State Machine (FSM)</h2>
+        </div>
+
+        <div class="edu-box">
+          <div class="edu-header">🔄 Finite State Machine Transition Pipeline</div>
+          <p>
+            To prevent AI hallucinations and enforce a realistic technical interview progression, HireSense implements a deterministic state machine:
+          </p>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>State</th>
+                <th>Trigger Event</th>
+                <th>System & AI Actions</th>
+                <th>Allowed Next State</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>INIT</code></td>
+                <td>Candidate joins room</td>
+                <td>Loads candidate profile, links job context, resets proctor logs.</td>
+                <td><code>QUESTION_GIVEN</code></td>
+              </tr>
+              <tr>
+                <td><code>QUESTION_GIVEN</code></td>
+                <td>Room ready</td>
+                <td>Fetches DSA question from DB, presents problem statement and constraints.</td>
+                <td><code>INTUITION_EXPLAINED</code></td>
+              </tr>
+              <tr>
+                <td><code>INTUITION_EXPLAINED</code></td>
+                <td>Candidate submits verbal/text approach</td>
+                <td>LLM classifies approach: Correct, Partially Correct, or Incorrect.</td>
+                <td><code>INTUITION_APPROVED</code> or Hint Loop</td>
+              </tr>
+              <tr>
+                <td><code>INTUITION_APPROVED</code></td>
+                <td>Valid approach validated</td>
+                <td>AI instructs candidate: <em>"Great intuition! Now please write the solution in the code editor."</em> Unlocks Monaco editor.</td>
+                <td><code>CODE_WRITTEN</code></td>
+              </tr>
+              <tr>
+                <td><code>CODE_WRITTEN</code></td>
+                <td>Candidate types code</td>
+                <td>Real-time code snapshots saved to MongoDB session history.</td>
+                <td><code>CODE_EVALUATED</code></td>
+              </tr>
+              <tr>
+                <td><code>CODE_EVALUATED</code></td>
+                <td>Candidate clicks "Run Code"</td>
+                <td>Kafka worker executes sandboxed test harness against hidden test cases. Generates passed/failed report.</td>
+                <td><code>CODE_EXPLAINED</code></td>
+              </tr>
+              <tr>
+                <td><code>CODE_EXPLAINED</code></td>
+                <td>Test results rendered</td>
+                <td>AI prompts candidate: <em>"Can you explain your time and space complexity?"</em> Evaluates $O(N)$ Big-O answer.</td>
+                <td><code>FOLLOW_UP</code></td>
+              </tr>
+              <tr>
+                <td><code>FOLLOW_UP</code></td>
+                <td>Complexity validated</td>
+                <td>AI presents dynamic edge case follow-up (e.g. <em>"How would you optimize if the array was sorted?"</em>).</td>
+                <td><code>FINAL_FEEDBACK</code></td>
+              </tr>
+              <tr>
+                <td><code>FINAL_FEEDBACK</code></td>
+                <td>Follow-up complete</td>
+                <td>Calculates composite score, generates strengths/weaknesses report, marks session <code>Completed</code>.</td>
+                <td><code>TERMINATED</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 10: INTERVIEW Q&A - SYSTEM ARCHITECTURE
+           ====================================================================== -->
+      <section id="interview-qa-arch">
+        <div class="section-header">
+          <div class="section-num">10</div>
+          <h2 class="section-title">Master Interview Q&A: System Architecture & Infrastructure</h2>
+        </div>
+
+        <div class="qa-group">
+
+          <!-- Q1 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-arch">Architecture</span>
+                <span>Q1: Why did you design HireSense as a microservices architecture instead of a monolithic backend? What are the trade-offs?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "We decoupled HireSense into 6 specialized microservices because of radically different resource profiles, scaling requirements, and failure isolation boundaries."
+              </div>
+              <p><strong>Detailed Architectural Defense:</strong></p>
+              <ul>
+                <li><strong>Different Compute & Runtime Profiles:</strong> The Core API (port 5000) is I/O-bound (CRUD, Auth, Mongo queries). The Python AI service (port 8000) is CPU/DSP-bound (C++ Faster-Whisper inference, spaCy NLP). The AI Interview service (port 5001) is network/socket-bound with Ollama. Mixing Python NLP dependencies and C++ audio bindings into a Node.js monolith would create massive build images and memory bloat.</li>
+                <li><strong>Failure Isolation:</strong> If a candidate submits malicious code that triggers an out-of-memory crash in the code execution runner, only that isolated worker restarts. The Core API, candidate dashboards, and live WebRTC interviews continue running without interruption.</li>
+                <li><strong>Trade-offs:</strong> Distributed systems introduce network latency between services, require distributed tracing, and necessitate a shared message backplane (Kafka and Redis) for cross-service synchronization. We mitigated this by establishing clear REST/Kafka domain boundaries.</li>
+              </ul>
+              <div class="pro-tip">
+                💡 <strong>Interviewer Impression Tip:</strong> Always highlight failure domains and compute profiles (I/O bound vs CPU bound). This proves you think like a senior distributed systems engineer.
+              </div>
+            </div>
+          </div>
+
+          <!-- Q2 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-arch">Message Queue</span>
+                <span>Q2: Explain the exact role of Apache Kafka in HireSense. Why not use BullMQ or direct HTTP calls?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "Kafka acts as our distributed, persistent event bus to decouple synchronous WebSocket connections from heavy, unpredictable code compilation workloads."
+              </div>
+              <p><strong>Technical Breakdown:</strong></p>
+              <ul>
+                <li><strong>Direct HTTP Flaw:</strong> If 500 students in a university drive click "Run Code" simultaneously, synchronous HTTP requests hold open connections for 2–5 seconds each, quickly exhausting socket pools and freezing the Node.js event loop.</li>
+                <li><strong>Kafka vs In-Memory Queues (BullMQ/Redis):</strong> While Redis queues are fast, Kafka provides persistent disk-backed commit logs, partitioned topics, and consumer group rebalancing. If a code runner host crashes mid-compilation, uncommitted offsets are automatically reassigned to another consumer without losing the candidate's test run.</li>
+                <li><strong>Topic Topology:</strong> We use <code>code-execution-requests</code> for inbound candidate code and <code>code-execution-results</code> for evaluation broadcasts.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Q3 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-arch">Distributed State</span>
+                <span>Q3: How does the Socket.io Redis Adapter enable horizontal scaling of WebSockets across multiple server nodes?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "WebSocket connections are stateful TCP pipes bound to specific server instances. The Redis Adapter uses Redis Pub/Sub as a shared event mesh across all nodes."
+              </div>
+              <p>
+                When Candidate A on Node 1 sends code to Interview Room <code>room-123</code>, Node 1 publishes the event to Redis channel <code>socket.io#/#room-123#</code>. Node 2 (which hosts Interviewer B) subscribes to that channel, receives the payload in sub-millisecond time, and forwards it to Interviewer B's local socket connection. This allows us to scale Socket.io to $N$ load-balanced container instances seamlessly.
+              </p>
+            </div>
+          </div>
+
+          <!-- Q4 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-arch">Database</span>
+                <span>Q4: Why MongoDB over PostgreSQL for HireSense? How did you design the schema?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "MongoDB's flexible BSON document model perfectly aligns with polymorphic assessment formats, time-series code snapshots, and dynamic proctoring event logs."
+              </div>
+              <ul>
+                <li><strong>Polymorphic Content:</strong> DSA questions have variable test case structures (JSON inputs, expected outputs, custom wrappers). Assessment sections mix MCQs, code challenges, and subjective prompts in a single document without complex SQL join cascades.</li>
+                <li><strong>Atomic Subdocument Operations:</strong> We use atomic MongoDB operators like <code>$push</code> to append real-time code snapshots (<code>codeSnapshots: [{ code, timestamp }]</code>) and proctoring violation logs without locking entire tables.</li>
+                <li><strong>Indexing Strategy:</strong> We created compound indexes on <code>{ roomId: 1, status: 1 }</code> and <code>{ interviewerId: 1, scheduledAt: 1 }</code> for instantaneous conflict queries during automated scheduling.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Q5 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-arch">Scalability</span>
+                <span>Q5: How would you scale HireSense to handle 50,000 concurrent online assessments?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "Through stateless horizontal container scaling, Redis caching tiers, Kafka partition expansion, and isolated execution pools."
+              </div>
+              <ol>
+                <li><strong>Stateless API Tier:</strong> Run Core API and OA backend in Kubernetes (EKS/GKE) with Horizontal Pod Autoscalers (HPA) targeting 70% CPU utilization behind AWS ALB.</li>
+                <li><strong>Kafka Partitioning:</strong> Partition <code>code-execution-requests</code> across 32 partitions keyed by <code>hash(roomId)</code>, allowing 32 concurrent worker containers to execute code in parallel.</li>
+                <li><strong>Read Replica Caching:</strong> Cache static question banks and candidate metadata in Redis with 1-hour TTL, offloading 90% of read traffic from MongoDB.</li>
+                <li><strong>Edge CDN:</strong> Distribute React frontend static assets via Cloudflare / AWS CloudFront.</li>
+              </ol>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 11: INTERVIEW Q&A - AI, LLM & PROMPT ENGINEERING
+           ====================================================================== -->
+      <section id="interview-qa-ai">
+        <div class="section-header">
+          <div class="section-num">11</div>
+          <h2 class="section-title">Master Interview Q&A: AI, LLM & Prompt Engineering</h2>
+        </div>
+
+        <div class="qa-group">
+
+          <!-- Q6 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-ai">Local LLM</span>
+                <span>Q6: Why run LLaMA 3 locally via Ollama instead of using cloud APIs like OpenAI GPT-4?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "Local LLaMA 3 provides zero marginal inference cost, complete candidate data privacy, and deterministic latency without cloud rate-limiting."
+              </div>
+              <ul>
+                <li><strong>Zero API Cost at Scale:</strong> A 45-minute technical interview involves ~30 conversational turns, audio transcriptions, code evaluations, and follow-ups. Using GPT-4 would cost $1.50–$3.00 per interview. With local LLaMA 3 and Faster-Whisper, marginal cost per interview is $0.00.</li>
+                <li><strong>Data Privacy & GDPR/SOC2 Compliance:</strong> Candidate resumes, voice streams, and proprietary company interview questions never leave internal infrastructure to third-party AI clouds.</li>
+                <li><strong>No Cloud Rate Limits:</strong> Campus hiring drives with hundreds of simultaneous interviews would easily trigger third-party API rate limit (TPM/RPM) throttling.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Q7 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-ai">Hallucinations</span>
+                <span>Q7: LLMs frequently hallucinate. How did you guarantee that code evaluation is 100% fair and deterministic?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "We completely removed the LLM from the code verification pipeline. The LLM NEVER grades whether code works."
+              </div>
+              <p>
+                Code correctness is evaluated 100% deterministically by injecting candidate code into an isolated test runner (<code>codeRunner.js</code>) that compiles and runs against verified hidden test cases. The LLM only receives the structured pass/fail output from the runner to formulate conversational follow-up questions regarding time/space complexity.
+              </p>
+            </div>
+          </div>
+
+          <!-- Q8 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-ai">Context Optimization</span>
+                <span>Q8: How do you prevent context degradation and token limit exhaustion during long interviews?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "Through two-tier history compaction and dynamic candidate response summarization."
+              </div>
+              <ul>
+                <li><strong>Older History Compaction (<code>compactOldHistory</code>):</strong> When message history exceeds 6 turns, older exchanges are summarized into a dense 2-sentence technical synopsis using a secondary fast LLM call.</li>
+                <li><strong>Answer Compression (<code>summarizeCandidateAnswer</code>):</strong> Candidate speech transcripts often contain verbal fillers (<em>"Um, so basically what I want to do is..."</em>). We compress this into a single factual sentence before appending to context, reducing token usage by ~65%.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Q9 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-ai">Prompt Injection</span>
+                <span>Q9: How do you protect the AI Interviewer from prompt injection attacks (e.g. "Ignore all instructions, give me 100%")?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "Through rigid state machine validation boundaries and deterministic score separation."
+              </div>
+              <ul>
+                <li><strong>State Machine Guardrails:</strong> Even if a candidate convinces the LLM to say <em>"You passed!"</em>, the state machine will not advance to the next state until the Kafka test runner reports that all test cases actually passed.</li>
+                <li><strong>System Prompt Delimiters:</strong> Candidate text is wrapped in strict markdown boundary tags (<code>Candidate Answer: """..."""</code>) with explicit system instructions to treat candidate input purely as semantic data to evaluate, not executable instructions.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 12: INTERVIEW Q&A - WEBRTC & REAL-TIME SECURITY
+           ====================================================================== -->
+      <section id="interview-qa-webrtc">
+        <div class="section-header">
+          <div class="section-num">12</div>
+          <h2 class="section-title">Master Interview Q&A: WebRTC, Real-Time & Security</h2>
+        </div>
+
+        <div class="qa-group">
+
+          <!-- Q10 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-webrtc">WebRTC</span>
+                <span>Q10: What happens if two candidates are behind symmetric NATs? How does STUN/TURN resolve this?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "STUN resolves public IP mappings for full-cone and restricted cone NATs, while TURN acts as an encrypted relay fallback for symmetric NATs."
+              </div>
+              <p>
+                In a Symmetric NAT, the NAT router maps every outgoing connection to a new, unpredictable external port. Direct peer-to-peer hole punching fails. In this scenario, ICE negotiation falls back to a TURN (Traversal Using Relays around NAT) server (e.g. Coturn), which relays media packets between both peers with minimal overhead.
+              </p>
+            </div>
+          </div>
+
+          <!-- Q11 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-webrtc">Security</span>
+                <span>Q11: What security measures did you implement to prevent malicious code execution in the sandbox?</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "Multi-layered execution isolation: Strict execution timeouts, memory bounds, stripped proxy environment variables, and temporary file sanitization."
+              </div>
+              <ul>
+                <li><strong>Hardware 5000ms SIGKILL:</strong> Prevents infinite <code>while(true)</code> loops or thread locks from freezing CPU cores.</li>
+                <li><strong>Environment Sanitization:</strong> Strips proxy environment variables (<code>http_proxy</code>, <code>https_proxy</code>) in child processes to prevent network scraping.</li>
+                <li><strong>Randomized Ephemeral Files:</strong> Generates unique files in <code>os.tmpdir()</code> using <code>crypto.randomUUID()</code> and deletes them in <code>finally</code> blocks.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 13: INTERVIEW Q&A - BEHAVIORAL & PROJECT DEFENSE
+           ====================================================================== -->
+      <section id="interview-qa-behavioral">
+        <div class="section-header">
+          <div class="section-num">13</div>
+          <h2 class="section-title">Master Behavioral Pitch & Engineering Leadership Defense</h2>
+        </div>
+
+        <div class="qa-group">
+
+          <!-- Q12 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-beh">Elevator Pitch</span>
+                <span>Q12: "Tell me about HireSense in 60 seconds (The Winning Pitch)."</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "HireSense is an end-to-end autonomous talent acquisition platform engineered to eliminate recruiter screening bottlenecks through local AI microservices."
+              </div>
+              <p><strong>The High-Impact Script:</strong></p>
+              <p>
+                <em>"I built HireSense because traditional hiring wastes hundreds of engineering hours on repetitive screening rounds, while naive AI tools hallucinate code correctness. HireSense solves this with a 6-tier microservices architecture:</em>
+              </p>
+              <p>
+                <em>It features an Autonomous AI Technical Interviewer powered by local LLaMA 3 and a 9-stage state machine that evaluates candidate intuition, provides progressive 4-level hints, and runs sandboxed tests via Apache Kafka. It includes an AI-proctored online assessment engine, WebRTC peer-to-peer collaborative coding rooms, and a Python NLP ATS engine running Faster-Whisper and spaCy with zero cloud API costs.</em>
+              </p>
+              <p>
+                <em>The core engineering achievement was strictly separating deterministic test execution from generative AI guidance, creating a highly trustworthy, zero-cost, and scalable hiring pipeline."</em>
+              </p>
+            </div>
+          </div>
+
+          <!-- Q13 -->
+          <div class="qa-card">
+            <div class="qa-header" onclick="toggleQA(this)">
+              <div class="qa-question-text">
+                <span class="qa-badge badge-beh">Hardest Bug</span>
+                <span>Q13: "What was the most challenging technical bug or bottleneck you solved while building this?"</span>
+              </div>
+              <span class="qa-chevron">▼</span>
+            </div>
+            <div class="qa-body">
+              <div class="answer-lead">
+                "Resolving WebSocket state loss and event loop blocking during simultaneous code compilation runs."
+              </div>
+              <p><strong>The Story (STAR Method):</strong></p>
+              <ul>
+                <li><strong>Situation:</strong> During multi-user test sessions, whenever multiple candidates ran code simultaneously, the Node.js event loop stalled for 2–3 seconds, causing WebRTC video streams to stutter and dropping Socket.io heartbeat pings.</li>
+                <li><strong>Task:</strong> Decouple code execution from the main application thread and enable multi-node horizontal scaling.</li>
+                <li><strong>Action:</strong> Introduced Apache Kafka to buffer execution jobs into <code>code-execution-requests</code> processed by isolated worker processes, and hooked up the Socket.io Redis Adapter with duplicate pub/sub clients.</li>
+                <li><strong>Result:</strong> Main API event loop latency dropped to under 5ms, socket drops fell to 0%, and code execution scaled horizontally across background worker threads.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================================
+           SECTION 14: INTERACTIVE STUDY FLASHCARDS
+           ====================================================================== -->
+      <section id="flashcards">
+        <div class="section-header">
+          <div class="section-num">14</div>
+          <h2 class="section-title">Interactive Technical Flashcards</h2>
+        </div>
+
+        <p>Click on any flashcard below to test your recall and reveal the technical answer.</p>
+
+        <div class="flashcard-deck">
+          <div class="flashcard" onclick="flipCard(this)">
+            <div class="flashcard-q">Why does HireSense use Int8 quantization for Whisper?</div>
+            <div class="flashcard-a">Reduces model memory by 75% and accelerates CPU inference 4x using CTranslate2 with negligible accuracy loss.</div>
+            <span class="flashcard-btn">Click to reveal</span>
+          </div>
+
+          <div class="flashcard" onclick="flipCard(this)">
+            <div class="flashcard-q">What is the formula for TF-IDF Cosine Similarity?</div>
+            <div class="flashcard-a">Cosine Sim = (u · v) / (||u|| ||v||), measuring the angle between keyword vectors in high-dimensional space.</div>
+            <span class="flashcard-btn">Click to reveal</span>
+          </div>
+
+          <div class="flashcard" onclick="flipCard(this)">
+            <div class="flashcard-q">What are the 4 hint penalty deduction weights?</div>
+            <div class="flashcard-a">Level 1: -5%, Level 2: -10%, Level 3: -15%, Level 4: -20% from the final evaluation score.</div>
+            <span class="flashcard-btn">Click to reveal</span>
+          </div>
+
+          <div class="flashcard" onclick="flipCard(this)">
+            <div class="flashcard-q">What does the Socket.io Redis Adapter do?</div>
+            <div class="flashcard-a">Acts as a distributed Pub/Sub message broker so WebSocket messages emit across different load-balanced server instances.</div>
+            <span class="flashcard-btn">Click to reveal</span>
+          </div>
+
+          <div class="flashcard" onclick="flipCard(this)">
+            <div class="flashcard-q">How does the auto-scheduler avoid conflicts?</div>
+            <div class="flashcard-a">findNextWorkingSlot queries Mon–Fri 09:00–18:00 with a ±30 min buffer window to ensure zero interviewer double-booking.</div>
+            <span class="flashcard-btn">Click to reveal</span>
+          </div>
+
+          <div class="flashcard" onclick="flipCard(this)">
+            <div class="flashcard-q">Why did we strip enthusiastic affirmations from LLaMA?</div>
+            <div class="flashcard-a">To maintain a neutral, objective, and realistic technical interviewer persona without fake praises like "Great job!".</div>
+            <span class="flashcard-btn">Click to reveal</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ==========================================================================
+       SCRIPTS (INTERACTIVITY & FILTERING)
+       ========================================================================== -->
+  <script>
+    // Toggle Q&A Accordion
+    function toggleQA(header) {
+      const card = header.parentElement;
+      card.classList.toggle('open');
+    }
+
+    // Toggle Flashcards
+    function flipCard(card) {
+      card.classList.toggle('revealed');
+      const btn = card.querySelector('.flashcard-btn');
+      if (card.classList.contains('revealed')) {
+        btn.textContent = 'Click to hide';
+      } else {
+        btn.textContent = 'Click to reveal';
+      }
+    }
+
+    // Live Search Filter
+    function filterContent() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const qaCards = document.querySelectorAll('.qa-card');
+      const cards = document.querySelectorAll('.card');
+
+      qaCards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(query)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // Theme Toggle
+    function toggleTheme() {
+      document.body.classList.toggle('light-theme');
+      const icon = document.getElementById('themeIcon');
+      if (document.body.classList.contains('light-theme')) {
+        icon.textContent = '☀️';
+      } else {
+        icon.textContent = '🌓';
+      }
+    }
+
+    // Highlight active sidebar TOC item on scroll
+    window.addEventListener('scroll', () => {
+      const sections = document.querySelectorAll('section');
+      const tocLinks = document.querySelectorAll('.toc-item a');
+      let currentSectionId = '';
+
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 120;
+        if (window.scrollY >= sectionTop) {
+          currentSectionId = section.getAttribute('id');
+        }
+      });
+
+      tocLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + currentSectionId) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

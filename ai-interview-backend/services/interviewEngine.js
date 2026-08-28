@@ -53,9 +53,20 @@ async function pickQuestion() {
 async function startDSAInterview(roomId) {
   let interview = await AIInterview.findOne({ roomId });
   if (!interview) {
+    const isDemo = roomId.includes("demo") || roomId.includes("llama") || roomId.includes("sandbox");
+    // Demo sessions expire in 15 minutes; real sessions expire in 3 hours if not completed
+    const ttlMinutes = isDemo ? 15 : 180;
+    const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
+
     interview = await AIInterview.create({
-      roomId, status: "InProgress", startedAt: new Date(), interviewState: "INIT"
+      roomId,
+      status: "InProgress",
+      startedAt: new Date(),
+      interviewState: "INIT",
+      isDemo,
+      expiresAt
     });
+    console.log(`[Engine] Created ${isDemo ? "DEMO" : "LIVE"} interview for room ${roomId}. Auto-expires at ${expiresAt.toISOString()}`);
   }
 
   const question = await pickQuestion();
@@ -74,7 +85,7 @@ async function startDSAInterview(roomId) {
   interview.hintPenalty       = 0;
   await interview.save();
 
-  const message = `Here's your DSA problem:\n\n**${question.title}** (${question.difficulty})\n\n${question.description}\n\nTake a moment to read it. When you're ready, explain your approach — how would you think about solving this?`;
+  const message = `Here's your DSA problem:\n\n**${question.title}** (${question.difficulty})\n\n${question.description}\n\nTake a moment to read it. I have started a 2-minute thought timer for you to gather your thoughts. Once the timer finishes, we will discuss your approach!`;
 
   return { message, state: "QUESTION_GIVEN", question: { title: question.title, difficulty: question.difficulty, id: question._id } };
 }
@@ -253,7 +264,7 @@ async function generateFinalFeedback(roomId) {
   if (!interview) throw new Error("Interview not found");
 
   // LLM generates narrative scores
-  const llmScores = await llm.generateScores(roomId);
+  const llmScores = await llm.generateScores(roomId, interview.proctorViolations, interview.tabSwitchCount);
 
   // Merge LLM soft scores into our scoring
   interview.scores.communication = Math.round(llmScores.communication / 10 * 100);
@@ -280,6 +291,13 @@ async function generateFinalFeedback(roomId) {
   interview.interviewState         = "FINAL_FEEDBACK";
   interview.status                 = "Completed";
   interview.completedAt            = new Date();
+
+  // For real (non-demo) sessions: extend TTL to 30 days so employers can review results.
+  // For demo sessions: keep the 15-min TTL so data auto-purges after the recruiter leaves.
+  if (!interview.isDemo) {
+    interview.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  }
+
   await interview.save();
 
   const feedbackText = buildFeedbackSummary(

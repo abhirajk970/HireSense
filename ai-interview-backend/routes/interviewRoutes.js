@@ -91,13 +91,33 @@ router.post("/submit-code", async (req, res) => {
 });
 
 // ─── POST /api/dsa/run-code ──────────────────────────────────────────────────
+const { v4: uuidv4 } = require("uuid");
+const { publishMessage, waitForResult } = require("../services/kafkaClient");
 
 router.post("/run-code", async (req, res) => {
   const { roomId, code, language = "javascript" } = req.body;
   if (!roomId || !code) return fail(res, "roomId and code are required");
 
   await withInterview(req, res, async () => {
-    const result = await engine.runCandidateCode(roomId, code, language);
+    const executionId = uuidv4();
+    
+    // Set up resolver promise BEFORE publishing
+    const resultPromise = waitForResult(executionId, 15000);
+    
+    // Publish execution request to Kafka
+    await publishMessage("code-execution-requests", {
+      executionId,
+      roomId,
+      code,
+      language
+    });
+    
+    // Await execution results from the worker
+    const result = await resultPromise;
+    if (result.error) {
+      return fail(res, result.error, 504);
+    }
+    
     return ok(res, result);
   });
 });
@@ -135,6 +155,19 @@ router.get("/status/:roomId", async (req, res) => {
     if (!interview) return fail(res, "Interview not found", 404);
     return ok(res, { interview });
   });
+});
+
+// ─── DELETE /api/dsa/demo-cleanup ────────────────────────────────────────────
+// Immediately wipes all demo interview sessions — called when recruiter ends the DEMO tour
+
+router.delete("/demo-cleanup", async (req, res) => {
+  try {
+    const result = await AIInterview.deleteMany({ isDemo: true });
+    console.log(`[Demo Cleanup] Deleted ${result.deletedCount} demo interview session(s).`);
+    return ok(res, { deleted: result.deletedCount, message: "Demo sessions cleared." });
+  } catch (err) {
+    return fail(res, err.message, 500);
+  }
 });
 
 module.exports = router;

@@ -36,9 +36,9 @@ function Topbar() {
   return (
     <div className="bg-[var(--bg-topbar)] backdrop-blur-xl sticky top-0 z-10 border-b border-[var(--border)] p-4 px-8 flex justify-between items-center h-16">
       <div className="flex items-center gap-3">
-         <div className={`w-2 h-2 rounded-full ${role === 'candidate' ? 'bg-indigo-400' : 'bg-violet-400'} shadow-lg ${role === 'candidate' ? 'shadow-indigo-400/50' : 'shadow-violet-400/50'}`}></div>
+         <div className={`w-2 h-2 rounded-full ${role === 'candidate' ? 'bg-indigo-400' : role === 'interviewer' ? 'bg-emerald-400' : 'bg-violet-400'} shadow-lg ${role === 'candidate' ? 'shadow-indigo-400/50' : role === 'interviewer' ? 'shadow-emerald-400/50' : 'shadow-violet-400/50'}`}></div>
          <span className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-[0.15em]">
-            {role === "candidate" ? "Candidate Portal" : "Employer Portal"}
+            {role === "candidate" ? "Candidate Portal" : role === "interviewer" ? "Interviewer Portal" : "Employer Portal"}
          </span>
       </div>
       

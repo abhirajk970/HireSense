@@ -21,7 +21,8 @@ const interviewSchema = new mongoose.Schema({
     overall: { type: Number, min: 0, max: 10, default: 0 }
   },
   candidateFeedback: { type: String, default: "" },
-  roomId: { type: String, required: true, unique: true }
+  roomId: { type: String, required: true, unique: true },
+  autoScheduled: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Interview", interviewSchema);

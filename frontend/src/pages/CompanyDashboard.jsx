@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import DashboardLayout from "../components/DashboardLayout";
 import JobApplicantsManager from "../components/JobApplicantsManager";
+import DateTimePicker from "../components/DateTimePicker";
 
 function CompanyDashboard() {
   const [job, setJob] = useState({
@@ -18,16 +19,21 @@ function CompanyDashboard() {
   });
   
   const [skillInput, setSkillInput] = useState("");
-  const [stageInput, setStageInput] = useState("Resume Screening");
+  const [stageInput, setStageInput] = useState("Resume Screening");       // for create tab
+  const [modalStageInput, setModalStageInput] = useState("Resume Screening"); // for config modal - Bug fix #2
   
-  const PREDEFINED_STAGES = ["Resume Screening", "MCQ Assessment", "DSA Assessment", "Technical Interview", "Final Review", "Assignment"];
+  const PREDEFINED_STAGES = ["Resume Screening", "DSA Assessment", "Technical Interview", "Final Review", "Assignment"];
   
   const [jobs, setJobs] = useState([]);
   const [applicants, setApplicants] = useState([]);
   const [interviews, setInterviews] = useState([]);
+  const [interviewers, setInterviewers] = useState([]);
   const [activeTab, setActiveTab] = useState("create");
   const [activeJobForApplicants, setActiveJobForApplicants] = useState(null);
-  const [rescheduleJob, setRescheduleJob] = useState(null); // job being rescheduled/edited
+  const [rescheduleJob, setRescheduleJob] = useState(null);
+  // Team tab state
+  const [newInterviewer, setNewInterviewer] = useState({ name: "", email: "", password: "", specialty: "General" });
+  const [teamLoading, setTeamLoading] = useState(false);
 
   const companyId = localStorage.getItem("userId");
 
@@ -56,6 +62,13 @@ function CompanyDashboard() {
        await fetchInterviews();
   };
 
+  const fetchInterviewers = async () => {
+       try {
+           const res = await axios.get(`http://localhost:5000/api/interviewers/company/${companyId}`);
+           setInterviewers(res.data);
+       } catch (err) { console.error(err); }
+  };
+
   const fetchInterviews = async () => {
        try {
            const res = await axios.get(`http://localhost:5000/api/interviews/company/${companyId}`);
@@ -71,9 +84,8 @@ function CompanyDashboard() {
           fetchDashboardData();
           setActiveJobForApplicants(null);
       }
-      if (activeTab === "viewInterviews") {
-          fetchInterviews();
-      }
+      if (activeTab === "viewInterviews") fetchInterviews();
+      if (activeTab === "team") fetchInterviewers();
   }, [activeTab]);
 
   const handleScheduleOA = async (appId) => {
@@ -135,10 +147,29 @@ function CompanyDashboard() {
       });
       alert("Pipeline updated!");
       setRescheduleJob(null);
-      fetchJobs();
+      await fetchJobs(); // Bug fix #3: refresh list after save
     } catch(e) {
       alert("Failed to update pipeline");
     }
+  };
+
+  const addInterviewer = async () => {
+    if (!newInterviewer.name || !newInterviewer.email || !newInterviewer.password)
+      return alert("Name, email and password are required.");
+    setTeamLoading(true);
+    try {
+      await axios.post("http://localhost:5000/api/interviewers", { ...newInterviewer, companyId });
+      setNewInterviewer({ name: "", email: "", password: "", specialty: "General" });
+      fetchInterviewers();
+    } catch (err) {
+      alert(err.response?.data?.msg || "Failed to add interviewer");
+    } finally { setTeamLoading(false); }
+  };
+
+  const deleteInterviewer = async (id) => {
+    if (!window.confirm("Remove this interviewer?")) return;
+    await axios.delete(`http://localhost:5000/api/interviewers/${id}`);
+    fetchInterviewers();
   };
 
   const addSkill = () => {
@@ -183,10 +214,11 @@ function CompanyDashboard() {
   };
 
   const tabs = [
-    { id: "create", label: "Create Job", icon: "M12 4v16m8-8H4" },
-    { id: "viewJobs", label: "My Jobs", icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
-    { id: "viewApplicants", label: "Applicants", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
-    { id: "viewInterviews", label: "Interviews", icon: "M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" }
+    { id: "create",         label: "Create Job",  icon: "M12 4v16m8-8H4" },
+    { id: "viewJobs",       label: "My Jobs",     icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" },
+    { id: "viewApplicants", label: "Applicants",   icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+    { id: "viewInterviews", label: "Interviews",   icon: "M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" },
+    { id: "team",           label: "Team",         icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" }
   ];
 
   const inputClass = "w-full border p-3 rounded-xl focus:ring-2 focus:ring-indigo-500/50 outline-none transition";
@@ -292,9 +324,14 @@ function CompanyDashboard() {
                 </div>
 
                 {/* Application Deadline */}
-                <div>
+                <div className="col-span-2">
                     <label className={labelClass}>Application Deadline</label>
-                    <input type="datetime-local" className={inputClass} style={inputStyle} value={job.applicationDeadline} onChange={(e) => setJob({ ...job, applicationDeadline: e.target.value })} />
+                    <DateTimePicker
+                      value={job.applicationDeadline}
+                      onChange={(val) => setJob({ ...job, applicationDeadline: val })}
+                      placeholder="Pick application deadline"
+                      minDate={new Date()}
+                    />
                 </div>
 
                 {/* Intelligent Pipeline Builder */}
@@ -346,13 +383,24 @@ function CompanyDashboard() {
                                         </select>
                                     </div>
                                   )}
-                                  <div>
-                                    <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">Start Date</label>
-                                    <input type="datetime-local" className="w-full border rounded-lg p-2 text-sm outline-none" style={inputStyle} value={stage.startDate || ""} onChange={e => updateStageConfig(idx, "startDate", e.target.value, job, setJob)} />
-                                  </div>
-                                  <div>
-                                    <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">End Date</label>
-                                    <input type="datetime-local" className="w-full border rounded-lg p-2 text-sm outline-none" style={inputStyle} value={stage.endDate || ""} onChange={e => updateStageConfig(idx, "endDate", e.target.value, job, setJob)} />
+                                  <div className="col-span-2 grid grid-cols-2 gap-3">
+                                   <div>
+                                     <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">Start Date</label>
+                                     <DateTimePicker
+                                       value={stage.startDate ? new Date(stage.startDate).toISOString() : ""}
+                                       onChange={(val) => updateStageConfig(idx, "startDate", val, job, setJob)}
+                                       placeholder="Stage opens…"
+                                     />
+                                   </div>
+                                   <div>
+                                     <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">End Date</label>
+                                     <DateTimePicker
+                                       value={stage.endDate ? new Date(stage.endDate).toISOString() : ""}
+                                       onChange={(val) => updateStageConfig(idx, "endDate", val, job, setJob)}
+                                       placeholder="Stage closes…"
+                                       minDate={stage.startDate ? new Date(stage.startDate) : undefined}
+                                     />
+                                   </div>
                                   </div>
                               </div>
                            </div>
@@ -446,16 +494,18 @@ function CompanyDashboard() {
             <div className="mb-5 flex gap-4 items-end">
               <div className="flex-1">
                   <label className={labelClass}>Application Deadline</label>
-                  <input type="datetime-local" className={inputClass} style={inputStyle}
-                    value={rescheduleJob.applicationDeadline ? new Date(rescheduleJob.applicationDeadline).toISOString().slice(0,16) : ""}
-                    onChange={e => setRescheduleJob({ ...rescheduleJob, applicationDeadline: e.target.value })} />
+                  <DateTimePicker
+                    value={rescheduleJob.applicationDeadline ? new Date(rescheduleJob.applicationDeadline).toISOString() : ""}
+                    onChange={(val) => setRescheduleJob({ ...rescheduleJob, applicationDeadline: val })}
+                    placeholder="Pick application deadline"
+                  />
               </div>
               <div className="flex-1 flex gap-2">
-                 <select className={inputClass + " appearance-none"} style={inputStyle} value={stageInput} onChange={(e) => setStageInput(e.target.value)}>
+                 <select className={inputClass + " flex-1 appearance-none"} style={inputStyle} value={modalStageInput} onChange={(e) => setModalStageInput(e.target.value)}>
                      <option disabled value="">Select Round...</option>
                      {PREDEFINED_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
                  </select>
-                 <button type="button" onClick={() => addStageToJob(rescheduleJob, setRescheduleJob, stageInput)} className="border font-semibold px-4 py-2 rounded-xl transition text-sm t-text-muted whitespace-nowrap" style={{ borderColor: 'var(--border)' }}>+ Round</button>
+                 <button type="button" onClick={() => addStageToJob(rescheduleJob, setRescheduleJob, modalStageInput)} className="border font-semibold px-4 py-2 rounded-xl transition text-sm t-text-muted whitespace-nowrap" style={{ borderColor: 'var(--border)' }}>+ Round</button>
               </div>
             </div>
 
@@ -484,21 +534,77 @@ function CompanyDashboard() {
                               </div>
                           )}
                           {stage.name.includes("Interview") && (
+                             <>
                              <div>
                                 <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">Interview Type</label>
                                 <select className="w-full border rounded-lg p-2 text-sm outline-none" style={inputStyle} value={stage.interviewType || "Human"} onChange={e => updateStageConfig(idx, "interviewType", e.target.value, rescheduleJob, setRescheduleJob)}>
                                     <option value="Human">Human</option>
                                     <option value="AI">AI Agent</option>
                                 </select>
-                            </div>
+                             </div>
+                             {stage.interviewType !== "AI" && (
+                             <div>
+                                <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">Interviewer</label>
+                                <select className="w-full border rounded-lg p-2 text-sm outline-none" style={inputStyle} value={stage.interviewerType || "Any"} onChange={e => updateStageConfig(idx, "interviewerType", e.target.value, rescheduleJob, setRescheduleJob)}>
+                                    <option value="Any">Any</option>
+                                    <option value="HR">HR</option>
+                                    <option value="Technical">Technical</option>
+                                </select>
+                             </div>
+                             )}
+                             </>
                           )}
-                          <div>
-                            <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">Start Date</label>
-                            <input type="datetime-local" className="w-full border rounded-lg p-2 text-sm outline-none" style={inputStyle} value={stage.startDate ? new Date(stage.startDate).toISOString().slice(0,16) : ""} onChange={e => updateStageConfig(idx, "startDate", e.target.value, rescheduleJob, setRescheduleJob)} />
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">End Date</label>
-                            <input type="datetime-local" className="w-full border rounded-lg p-2 text-sm outline-none" style={inputStyle} value={stage.endDate ? new Date(stage.endDate).toISOString().slice(0,16) : ""} onChange={e => updateStageConfig(idx, "endDate", e.target.value, rescheduleJob, setRescheduleJob)} />
+                          {stage.name === "Assignment" && (
+                              <div className="col-span-full bg-white/[0.02] p-4 rounded-xl border border-white/[0.06] space-y-3 mt-2">
+                                 <h5 className="text-xs font-bold text-gray-400 uppercase">Assignment Details</h5>
+                                 <div>
+                                     <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">Title</label>
+                                     <input type="text" className="w-full border rounded-lg p-2 text-sm outline-none" style={inputStyle} placeholder="e.g. Frontend Challenge" value={stage.assignment?.title || ""} onChange={e => {
+                                         const assignment = { ...(stage.assignment || {}), title: e.target.value };
+                                         updateStageConfig(idx, "assignment", assignment, rescheduleJob, setRescheduleJob);
+                                     }} />
+                                 </div>
+                                 <div>
+                                     <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">Description</label>
+                                     <textarea rows="2" className="w-full border rounded-lg p-2 text-sm outline-none" style={inputStyle} placeholder="Describe the task..." value={stage.assignment?.description || ""} onChange={e => {
+                                         const assignment = { ...(stage.assignment || {}), description: e.target.value };
+                                         updateStageConfig(idx, "assignment", assignment, rescheduleJob, setRescheduleJob);
+                                     }} />
+                                 </div>
+                                 <div>
+                                     <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">Upload PDF (Optional)</label>
+                                     <input type="file" accept="application/pdf" className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/10 file:text-indigo-400 hover:file:bg-indigo-500/20" onChange={async (e) => {
+                                         if (!e.target.files[0]) return;
+                                         const fd = new FormData();
+                                         fd.append("file", e.target.files[0]);
+                                         try {
+                                             const res = await axios.post("http://localhost:5000/api/jobs/upload-assignment", fd);
+                                             const assignment = { ...(stage.assignment || {}), pdfUrl: res.data.url };
+                                             updateStageConfig(idx, "assignment", assignment, rescheduleJob, setRescheduleJob);
+                                         } catch(err) { alert("Upload failed"); }
+                                     }} />
+                                     {stage.assignment?.pdfUrl && <p className="text-xs text-emerald-400 mt-2">PDF Uploaded ✓</p>}
+                                 </div>
+                              </div>
+                          )}
+                          <div className="col-span-2 grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">Start Date</label>
+                              <DateTimePicker
+                                value={stage.startDate ? new Date(stage.startDate).toISOString() : ""}
+                                onChange={(val) => updateStageConfig(idx, "startDate", val, rescheduleJob, setRescheduleJob)}
+                                placeholder="Stage opens…"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-semibold t-text-muted uppercase mb-1">End Date</label>
+                              <DateTimePicker
+                                value={stage.endDate ? new Date(stage.endDate).toISOString() : ""}
+                                onChange={(val) => updateStageConfig(idx, "endDate", val, rescheduleJob, setRescheduleJob)}
+                                placeholder="Stage closes…"
+                                minDate={stage.startDate ? new Date(stage.startDate) : undefined}
+                              />
+                            </div>
                           </div>
                       </div>
                    </div>
@@ -569,7 +675,7 @@ function CompanyDashboard() {
                                       <div>
                                           <h3 className="font-bold text-lg t-text">{inv.stageName}</h3>
                                           <p className="text-xs text-indigo-400 font-medium">{inv.jobId?.title}</p>
-                                          {inv.interviewMode === 'AI' && <span className="text-[9px] bg-violet-500/15 text-violet-400 px-2 py-0.5 rounded-full border border-violet-500/20 font-bold mt-1 inline-block">🤖 AI Powered</span>}
+                                          {inv.interviewMode === 'AI' && <span className="text-[9px] bg-violet-500/15 text-violet-400 px-2 py-0.5 rounded-full border border-violet-500/20 font-bold mt-1 inline-block">AI Managed</span>}
                                       </div>
                                       <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded border ${inv.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'}`}>{inv.status}</span>
                                   </div>
@@ -592,7 +698,7 @@ function CompanyDashboard() {
                                       
                                       {inv.interviewMode === 'AI' ? (
                                           <span className="px-4 py-2 rounded-xl text-xs font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                                              {inv.status === 'Completed' ? 'View AI Report' : '🤖 AI Managed'}
+                                              {inv.status === 'Completed' ? 'View AI Report' : 'AI Managed'}
                                           </span>
                                       ) : inv.status === 'Scheduled' && (
                                           <button 
@@ -620,6 +726,91 @@ function CompanyDashboard() {
                   </div>
               )}
       </div>
+      )}
+
+      {/* ═══ TEAM TAB ═══ */}
+      {activeTab === "team" && (
+        <div className="space-y-6">
+          {/* Add Interviewer Form */}
+          <div className="rounded-2xl border p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            <h2 className="text-base font-bold t-text mb-1 flex items-center gap-2">
+              <span className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+              </span>
+              Add Interviewer Account
+            </h2>
+            <p className="text-xs t-text-muted mb-5">Create a login for a team member. They'll access their interview schedule at <code className="text-indigo-400">/login/interviewer</code>.</p>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className={labelClass}>Full Name</label>
+                <input className={inputClass} style={inputStyle} placeholder="e.g. Priya Sharma" value={newInterviewer.name} onChange={e => setNewInterviewer({...newInterviewer, name: e.target.value})} />
+              </div>
+              <div>
+                <label className={labelClass}>Email Address</label>
+                <input type="email" className={inputClass} style={inputStyle} placeholder="priya@company.com" value={newInterviewer.email} onChange={e => setNewInterviewer({...newInterviewer, email: e.target.value})} />
+              </div>
+              <div>
+                <label className={labelClass}>Temporary Password</label>
+                <input type="password" className={inputClass} style={inputStyle} placeholder="••••••••" value={newInterviewer.password} onChange={e => setNewInterviewer({...newInterviewer, password: e.target.value})} />
+              </div>
+              <div>
+                <label className={labelClass}>Specialty / Domain</label>
+                <select className={inputClass + " appearance-none"} style={inputStyle} value={newInterviewer.specialty} onChange={e => setNewInterviewer({...newInterviewer, specialty: e.target.value})}>
+                  <option>General</option>
+                  <option>Frontend</option>
+                  <option>Backend</option>
+                  <option>System Design</option>
+                  <option>Data Science</option>
+                  <option>DevOps</option>
+                  <option>HR</option>
+                </select>
+              </div>
+            </div>
+            <button onClick={addInterviewer} disabled={teamLoading} className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all text-sm disabled:opacity-50">
+              {teamLoading ? "Creating..." : "Create Interviewer Account"}
+            </button>
+          </div>
+
+          {/* Interviewers List */}
+          <div className="rounded-2xl border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            <div className="p-5 border-b" style={{ borderColor: 'var(--border)' }}>
+              <h3 className="font-bold t-text text-sm">Your Interview Team ({interviewers.length})</h3>
+            </div>
+            {interviewers.length === 0 ? (
+              <div className="p-12 text-center t-text-dimmed">No interviewers added yet.</div>
+            ) : (
+              <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                {interviewers.map(iv => (
+                  <div key={iv._id} className="p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {iv.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-semibold t-text text-sm">{iv.name}</p>
+                        <p className="text-xs t-text-muted">{iv.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-lg font-medium">{iv.specialty}</span>
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-indigo-400">{iv.upcomingCount}</p>
+                        <p className="text-[10px] t-text-muted uppercase tracking-wider">Upcoming</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-emerald-400">{iv.completedCount}</p>
+                        <p className="text-[10px] t-text-muted uppercase tracking-wider">Done</p>
+                      </div>
+                      <button onClick={() => deleteInterviewer(iv._id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-all">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
     </DashboardLayout>

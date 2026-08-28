@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HireSense – Project Report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:   #1a5eb8;
+      --accent2:  #0d9aaa;
+      --dark:     #111827;
+      --body:     #374151;
+      --muted:    #6b7280;
+      --border:   #e5e7eb;
+      --surface:  #f9fafb;
+      --white:    #ffffff;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #d1d5db;
+      color: var(--dark);
+      line-height: 1.7;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    /* ── PAGE ── */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 20px auto;
+      background: var(--white);
+      box-shadow: 0 2px 24px rgba(0,0,0,.18);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── COVER PAGE ── */
+    .cover {
+      width: 210mm;
+      height: 297mm;
+      margin: 20px auto;
+      background: var(--white);
+      box-shadow: 0 2px 24px rgba(0,0,0,.18);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cover-top-bar {
+      height: 8px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    .cover-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 64px;
+      text-align: center;
+    }
+
+    .cover-logo-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 52px;
+    }
+    .cover-logo-box {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+    .cover-logo-name {
+      font-size: 32px; font-weight: 800; color: var(--dark); letter-spacing: -1px;
+    }
+    .cover-logo-name span { color: var(--accent2); }
+
+    .cover-divider {
+      width: 80px; height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      margin: 0 auto 36px;
+    }
+
+    .cover-doc-type {
+      font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 18px;
+    }
+
+    .cover-title {
+      font-size: 38px; font-weight: 800; color: var(--dark);
+      line-height: 1.15; letter-spacing: -1px;
+      margin-bottom: 20px;
+    }
+
+    .cover-subtitle {
+      font-size: 16px; color: var(--muted); line-height: 1.7;
+      max-width: 440px; margin: 0 auto 52px;
+    }
+
+    .cover-meta-row {
+      display: flex; gap: 0;
+      border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden;
+      width: 100%; max-width: 480px;
+    }
+    .cover-meta-cell {
+      flex: 1; padding: 16px;
+      border-right: 1px solid var(--border);
+      text-align: center;
+    }
+    .cover-meta-cell:last-child { border-right: none; }
+    .cover-meta-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 5px;
+    }
+    .cover-meta-value { font-size: 14px; font-weight: 700; color: var(--dark); }
+
+    .cover-footer-bar {
+      padding: 20px 64px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .cover-footer-left { font-size: 12px; color: var(--muted); }
+    .cover-footer-right { font-size: 12px; color: var(--muted); }
+
+    /* ── INNER PAGE ── */
+    .inner-page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto 20px;
+      background: var(--white);
+      box-shadow: 0 2px 24px rgba(0,0,0,.18);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-header {
+      padding: 22px 52px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .page-header-logo {
+      font-size: 14px; font-weight: 800; color: var(--dark); letter-spacing: -.3px;
+    }
+    .page-header-logo span { color: var(--accent2); }
+    .page-header-right { font-size: 11px; color: var(--muted); }
+
+    .page-top-stripe {
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    .page-content {
+      flex: 1;
+      padding: 36px 52px 60px;
+    }
+
+    .page-footer {
+      padding: 14px 52px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .page-footer-text { font-size: 11px; color: var(--muted); }
+    .page-num {
+      font-size: 11px; font-weight: 700; color: var(--accent);
+    }
+
+    /* ── TYPOGRAPHY ── */
+    .chapter-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--accent2); margin-bottom: 8px;
+    }
+    .chapter-title {
+      font-size: 26px; font-weight: 800; color: var(--dark);
+      letter-spacing: -.6px; margin-bottom: 6px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid var(--border);
+      position: relative;
+    }
+    .chapter-title::after {
+      content: '';
+      position: absolute;
+      left: 0; bottom: -2px;
+      width: 60px; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    h2 {
+      font-size: 16px; font-weight: 700; color: var(--dark);
+      margin: 28px 0 10px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2::before {
+      content: '';
+      width: 4px; height: 18px;
+      background: linear-gradient(to bottom, var(--accent), var(--accent2));
+      border-radius: 2px;
+      display: inline-block; flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 14px; font-weight: 700; color: var(--accent);
+      margin: 20px 0 8px;
+    }
+
+    p {
+      font-size: 13.5px; color: var(--body);
+      line-height: 1.8; margin-bottom: 12px;
+    }
+
+    ul, ol {
+      padding-left: 20px; margin-bottom: 14px;
+    }
+    li {
+      font-size: 13.5px; color: var(--body);
+      line-height: 1.75; margin-bottom: 5px;
+    }
+    strong { color: var(--dark); font-weight: 600; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: #eff6ff;
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 18px 0;
+      font-size: 13.5px; color: #1e40af;
+    }
+    .callout.teal {
+      border-left-color: var(--accent2);
+      background: #ecfeff;
+      color: #0e7490;
+    }
+    .callout.amber {
+      border-left-color: #d97706;
+      background: #fffbeb;
+      color: #92400e;
+    }
+    .callout strong { display: block; margin-bottom: 4px; font-size: 13px; }
+
+    /* ── TWO COLUMN ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+
+    /* ── CARD ── */
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      background: var(--surface);
+    }
+    .card-title {
+      font-size: 13px; font-weight: 700; color: var(--dark);
+      margin-bottom: 8px; display: flex; align-items: center; gap: 7px;
+    }
+    .card p { font-size: 12.5px; margin-bottom: 0; }
+
+    /* ── TABLE ── */
+    .doc-table {
+      width: 100%; border-collapse: collapse; margin-bottom: 18px;
+      font-size: 12.5px;
+    }
+    .doc-table thead tr {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .doc-table thead th {
+      color: white; font-weight: 700; font-size: 11px;
+      letter-spacing: .5px; text-transform: uppercase;
+      padding: 11px 14px; text-align: left;
+    }
+    .doc-table tbody tr { border-bottom: 1px solid var(--border); }
+    .doc-table tbody tr:nth-child(even) { background: var(--surface); }
+    .doc-table tbody td { padding: 10px 14px; color: var(--body); vertical-align: top; }
+    .doc-table tbody td:first-child { font-weight: 600; color: var(--dark); }
+
+    /* ── CODE SNIPPET ── */
+    .snippet {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 16px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      line-height: 1.85;
+      color: #94a3b8;
+      margin: 14px 0;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .snippet .k { color: #7dd3fc; }
+    .snippet .v { color: #86efac; }
+    .snippet .c { color: #475569; font-style: italic; }
+
+    /* ── FLOW STEPS ── */
+    .flow { display: flex; flex-direction: column; gap: 0; margin: 14px 0; }
+    .flow-step {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .flow-step:last-child { border-bottom: none; }
+    .flow-n {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: white;
+    }
+    .flow-body strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 3px; color: var(--dark); }
+    .flow-body p { font-size: 12.5px; margin: 0; }
+
+    /* ── SCORE BARS ── */
+    .sbar { margin-bottom: 14px; }
+    .sbar-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .sbar-top span:first-child { font-size: 13px; font-weight: 600; color: var(--dark); }
+    .sbar-top span:last-child  { font-size: 13px; font-weight: 700; color: var(--accent); }
+    .sbar-track { height: 7px; background: var(--border); border-radius: 100px; overflow: hidden; }
+    .sbar-fill  { height: 100%; border-radius: 100px; }
+
+    /* ── METHOD BADGE ── */
+    .method {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 4px;
+    }
+    .m-get    { background: #d1fae5; color: #065f46; }
+    .m-post   { background: #dbeafe; color: #1e40af; }
+    .m-put    { background: #fef3c7; color: #78350f; }
+
+    /* ── ARCH DIAGRAM ── */
+    .arch-diagram {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin: 18px 0;
+    }
+    .arch-row-d { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; }
+    .arch-nd {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+      border-radius: 6px; padding: 7px 13px;
+      font-size: 11.5px; font-weight: 600; color: #e2e8f0; white-space: nowrap;
+    }
+    .arch-nd.b  { background: rgba(26,94,184,.35); border-color: rgba(26,94,184,.6); color: #93c5fd; }
+    .arch-nd.t  { background: rgba(13,154,170,.25); border-color: rgba(13,154,170,.5); color: #67e8f9; }
+    .arch-nd.g  { background: rgba(16,185,129,.2); border-color: rgba(16,185,129,.4); color: #6ee7b7; }
+    .arch-sep   { font-size: 12px; color: rgba(255,255,255,.25); }
+    .arch-lbl   { font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.3); text-align: center; margin-bottom: 8px; }
+    .arch-dn    { text-align: center; color: rgba(255,255,255,.2); font-size: 14px; margin: 2px 0; }
+    .arch-row-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.25); width: 72px; text-align: right; padding-right: 8px; border-right: 1px solid rgba(255,255,255,.08); flex-shrink: 0; }
+    .arch-row-full { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+
+    /* ── BADGE ── */
+    .badge {
+      display: inline-block;
+      font-size: 10.5px; font-weight: 600;
+      padding: 2px 9px; border-radius: 100px;
+    }
+    .badge-blue  { background: #dbeafe; color: #1d4ed8; }
+    .badge-teal  { background: #ccfbf1; color: #0f766e; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+
+    /* ── PRINT ── */
+    @media print {
+      body { background: white; }
+      .cover, .inner-page { margin: 0; box-shadow: none; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-top-bar"></div>
+  <div class="cover-body">
+    <div class="cover-logo-row">
+      <div class="cover-logo-box">🎯</div>
+      <div class="cover-logo-name">Hire<span>Sense</span></div>
+    </div>
+    <div class="cover-divider"></div>
+    <div class="cover-doc-type">Project Report &nbsp;/&nbsp; Technical Documentation</div>
+    <div class="cover-title">AI-Powered Talent<br/>Acquisition Platform</div>
+    <div class="cover-subtitle">
+      A comprehensive microservices-based hiring system integrating machine learning resume screening, AI-proctored assessments, and a locally-hosted LLM-driven DSA interview engine.
+    </div>
+    <div class="cover-meta-row">
+      <div class="cover-meta-cell">
+        <div class="cover-meta-label">Version</div>
+        <div class="cover-meta-value">1.0.0</div>
+      </div>
+      <div class="cover-meta-cell">
+        <div class="cover-meta-label">Date</div>
+        <div class="cover-meta-value">July 2026</div>
+      </div>
+      <div class="cover-meta-cell">
+        <div class="cover-meta-label">Stack</div>
+        <div class="cover-meta-value">MERN + Python</div>
+      </div>
+      <div class="cover-meta-cell">
+        <div class="cover-meta-label">License</div>
+        <div class="cover-meta-value">MIT</div>
+      </div>
+    </div>
+  </div>
+  <div class="cover-footer-bar">
+    <div class="cover-footer-left">github.com/abhirajk970/HireSense</div>
+    <div class="cover-footer-right">abhirajk970.github.io/HireSense</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 2 — OVERVIEW & PROBLEM STATEMENT
+══════════════════════════════════════ -->
+<div class="inner-page">
+  <div class="page-top-stripe"></div>
+  <div class="page-header">
+    <div class="page-header-logo">Hire<span>Sense</span> — Project Report</div>
+    <div class="page-header-right">Technical Documentation v1.0</div>
+  </div>
+  <div class="page-content">
+
+    <div class="chapter-label">Section 01</div>
+    <div class="chapter-title">Executive Overview</div>
+
+    <p>
+      <strong>HireSense</strong> is a full-stack, AI-driven talent acquisition platform engineered to modernize and automate the complete recruitment lifecycle. Built on a microservices architecture using the MERN stack (MongoDB, Express.js, React.js, Node.js) with a dedicated Python-based AI service layer, the platform combines machine learning-powered resume screening, AI-proctored online assessments, and a locally-hosted LLM (Large Language Model) that autonomously conducts structured technical interviews — all within a unified system accessible to candidates, companies, and interviewers through dedicated role-based dashboards.
+    </p>
+
+    <div class="callout">
+      <strong>🎯 Core Design Philosophy</strong>
+      HireSense is not a chatbot layered on a job board. It is a structured evaluation engine with AI assistance — AI is deliberately constrained within a deterministic framework, ensuring reproducible, fair, and hallucination-resistant results at every stage of the hiring process.
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">🎯 Platform Goal</div>
+        <p>Eliminate manual bottlenecks across the entire recruitment pipeline — from the first resume submission to the final offer letter — with minimal human intervention at each stage.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">💡 Key Innovation</div>
+        <p>Using a locally-hosted LLaMA 3 model via Ollama removes API costs entirely, keeps candidate data on-premises, and makes the AI system deployable without any external dependencies.</p>
+      </div>
+    </div>
+
+    <h2>Problem Statement</h2>
+    <p>Traditional hiring processes are slow, expensive, and inconsistent. HireSense directly addresses five core industry pain points:</p>
+
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th>Problem</th>
+          <th>Impact</th>
+          <th>HireSense Solution</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Manual resume screening</td>
+          <td>Slow, biased, inconsistent across recruiters</td>
+          <td>ML-based auto-parsing with TF-IDF scoring</td>
+        </tr>
+        <tr>
+          <td>Assessment integrity</td>
+          <td>Candidates cheat; results are unreliable</td>
+          <td>Computer vision proctoring, time-boxed sessions</td>
+        </tr>
+        <tr>
+          <td>Interview scalability</td>
+          <td>Senior engineers blocked as interviewers</td>
+          <td>Autonomous AI interviews with LLaMA 3</td>
+        </tr>
+        <tr>
+          <td>Inconsistent evaluation</td>
+          <td>Same candidate rated differently by different interviewers</td>
+          <td>Standardized state-machine-driven scoring</td>
+        </tr>
+        <tr>
+          <td>AI API cost</td>
+          <td>Prohibitively expensive at scale with GPT-4 etc.</td>
+          <td>Locally-hosted LLM — zero per-request cost</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Key Features at a Glance</h2>
+    <div class="three-col">
+      <div class="card">
+        <div class="card-title">🤖 AI DSA Interview</div>
+        <p>LLaMA 3-powered structured technical interviews with state machine control, progressive hints, and deterministic code scoring.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🛡️ Proctored OA</div>
+        <p>Computer vision-based monitoring, time-windowed access, auto-MCQ generation from job descriptions.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">📄 Resume ML Engine</div>
+        <p>Auto-parses PDFs using spaCy NER and TF-IDF cosine similarity to score and rank applicants.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🏢 Dual Portals</div>
+        <p>Separate dashboards for candidates and companies with pipeline management, notifications, and analytics.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 Smart Scheduling</div>
+        <p>Cron-based automated email reminders at 2-hour and 5-minute intervals before interviews.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🔐 Sandboxed Code</div>
+        <p>Piston API executes candidate code in isolated containers against real test cases — no LLM judgment.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-text">HireSense — AI-Powered Talent Acquisition Platform</div>
+    <div class="page-num">2</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 3 — ARCHITECTURE & TECH STACK
+══════════════════════════════════════ -->
+<div class="inner-page">
+  <div class="page-top-stripe"></div>
+  <div class="page-header">
+    <div class="page-header-logo">Hire<span>Sense</span> — Project Report</div>
+    <div class="page-header-right">Technical Documentation v1.0</div>
+  </div>
+  <div class="page-content">
+
+    <div class="chapter-label">Section 02</div>
+    <div class="chapter-title">System Architecture & Technology Stack</div>
+
+    <p>HireSense is built on a <strong>microservices architecture</strong>, where each service independently owns its domain logic and communicates via RESTful HTTP APIs. This design ensures modular development, independent scalability, and fault isolation. The system is organized into four distinct layers:</p>
+
+    <div class="arch-diagram">
+      <div class="arch-lbl">System Architecture — Layer Overview</div>
+      <div class="arch-row-full">
+        <div class="arch-row-lbl">Frontend</div>
+        <div class="arch-row-d">
+          <div class="arch-nd b">React + Vite (Main Portal)</div>
+          <div class="arch-sep">·</div>
+          <div class="arch-nd b">Next.js (OA Frontend)</div>
+          <div class="arch-sep">·</div>
+          <div class="arch-nd b">React + Monaco (Interview UI)</div>
+        </div>
+      </div>
+      <div class="arch-dn">↓</div>
+      <div class="arch-row-full">
+        <div class="arch-row-lbl">Backend</div>
+        <div class="arch-row-d">
+          <div class="arch-nd b">Core API — Node/Express :5000</div>
+          <div class="arch-sep">·</div>
+          <div class="arch-nd">OA Backend — Node/Express :4000</div>
+          <div class="arch-sep">·</div>
+          <div class="arch-nd">AI Interview Backend</div>
+        </div>
+      </div>
+      <div class="arch-dn">↓</div>
+      <div class="arch-row-full">
+        <div class="arch-row-lbl">AI Layer</div>
+        <div class="arch-row-d">
+          <div class="arch-nd t">FastAPI / Python :8000</div>
+          <div class="arch-sep">→</div>
+          <div class="arch-nd t">LLaMA 3 via Ollama (local)</div>
+          <div class="arch-sep">·</div>
+          <div class="arch-nd">Piston Code Runner</div>
+        </div>
+      </div>
+      <div class="arch-dn">↓</div>
+      <div class="arch-row-full">
+        <div class="arch-row-lbl">Storage</div>
+        <div class="arch-row-d">
+          <div class="arch-nd g">MongoDB (Primary DB)</div>
+          <div class="arch-sep">·</div>
+          <div class="arch-nd">Multer (File Storage)</div>
+          <div class="arch-sep">·</div>
+          <div class="arch-nd">Nodemailer (Email)</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Technology Stack</h2>
+
+    <table class="doc-table">
+      <thead>
+        <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Main Frontend</td>
+          <td><span class="badge badge-blue">React.js</span> <span class="badge badge-blue">Vite</span> <span class="badge badge-blue">Tailwind CSS</span></td>
+          <td>Candidate, company & interviewer portals with glassmorphism UI</td>
+        </tr>
+        <tr>
+          <td>Interview UI</td>
+          <td><span class="badge badge-blue">React.js</span> <span class="badge badge-blue">Monaco Editor</span></td>
+          <td>IDE-like coding environment for DSA interview sessions</td>
+        </tr>
+        <tr>
+          <td>OA Frontend</td>
+          <td><span class="badge badge-blue">Next.js</span> <span class="badge badge-blue">Tailwind CSS</span></td>
+          <td>Clean, distraction-minimized online assessment delivery</td>
+        </tr>
+        <tr>
+          <td>Core API</td>
+          <td><span class="badge badge-teal">Node.js</span> <span class="badge badge-teal">Express v5</span> <span class="badge badge-teal">Mongoose</span></td>
+          <td>Auth, jobs, applications, profiles, interviews, notifications</td>
+        </tr>
+        <tr>
+          <td>AI / ML Service</td>
+          <td><span class="badge badge-amber">FastAPI</span> <span class="badge badge-amber">spaCy</span> <span class="badge badge-amber">scikit-learn</span> <span class="badge badge-amber">pdfplumber</span></td>
+          <td>Resume parsing, NER, TF-IDF similarity, Whisper STT</td>
+        </tr>
+        <tr>
+          <td>LLM Runtime</td>
+          <td><span class="badge badge-amber">LLaMA 3</span> <span class="badge badge-amber">Ollama</span></td>
+          <td>Local, cost-free AI inference for interviews and evaluation</td>
+        </tr>
+        <tr>
+          <td>Code Execution</td>
+          <td><span class="badge badge-teal">Piston API</span> <span class="badge badge-teal">Docker</span></td>
+          <td>Sandboxed, multi-language code execution with time/memory limits</td>
+        </tr>
+        <tr>
+          <td>Database</td>
+          <td><span class="badge badge-teal">MongoDB</span></td>
+          <td>Flexible document store for all platform entities</td>
+        </tr>
+        <tr>
+          <td>Auth & Security</td>
+          <td><span class="badge badge-blue">JWT</span> <span class="badge badge-blue">bcryptjs</span></td>
+          <td>Stateless role-based authentication, secure password hashing</td>
+        </tr>
+        <tr>
+          <td>Automation</td>
+          <td><span class="badge badge-teal">node-cron</span> <span class="badge badge-teal">Nodemailer</span> <span class="badge badge-teal">uuid</span></td>
+          <td>Scheduled reminders, email delivery, unique room ID generation</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Microservices Breakdown</h2>
+    <div class="two-col">
+      <div>
+        <h3>Core API Backend (backend/ · :5000)</h3>
+        <p>The central server exposing 7 route modules: authentication, jobs, applications, profiles, interviews, interviewer feedback, and notifications. Handles all business logic, JWT validation, file uploads via Multer, and triggers the AI service for resume processing. Includes a cron scheduler for automated interview reminders.</p>
+
+        <h3>OA Backend (oa-backend/ · :4000)</h3>
+        <p>Dedicated online assessment service managing the question bank (seeded DSA and MCQ questions), candidate session lifecycle, proctoring event logs, time-window enforcement, and score computation upon submission.</p>
+      </div>
+      <div>
+        <h3>AI Service (ai-service/ · :8000)</h3>
+        <p>Python FastAPI service with two endpoints: <strong>/parse-resume</strong> uses pdfplumber, spaCy NER, and TF-IDF cosine similarity to score resumes against job descriptions; <strong>/transcribe</strong> uses the local Whisper tiny.en model to convert candidate voice input to text with zero API cost.</p>
+
+        <h3>AI Interview Backend</h3>
+        <p>Orchestrates the LLaMA 3-powered DSA interview state machine. Communicates with Ollama for LLM inference, delegates code execution to Piston API, maintains conversation memory across requests, and produces structured multi-dimension evaluation reports.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-text">HireSense — AI-Powered Talent Acquisition Platform</div>
+    <div class="page-num">3</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 4 — AI INTERVIEW ENGINE
+══════════════════════════════════════ -->
+<div class="inner-page">
+  <div class="page-top-stripe"></div>
+  <div class="page-header">
+    <div class="page-header-logo">Hire<span>Sense</span> — Project Report</div>
+    <div class="page-header-right">Technical Documentation v1.0</div>
+  </div>
+  <div class="page-content">
+
+    <div class="chapter-label">Section 03</div>
+    <div class="chapter-title">AI Interview Engine — Design & Evaluation</div>
+
+    <p>The AI interview engine is the platform's most technically sophisticated component. It uses LLaMA 3 (via Ollama) wrapped inside a <strong>finite-state machine</strong> — a deliberate design that prevents the non-deterministic, open-ended behaviour of raw LLM conversations and guarantees reproducible, auditable interview sessions.</p>
+
+    <div class="callout teal">
+      <strong>Why a State Machine?</strong>
+      A raw LLM conversation has no guaranteed structure — the model can skip evaluation steps, be manipulated by clever candidates, or produce inconsistent results. The state machine ensures the backend, not the LLM, controls interview progression. The LLM is consulted only for subjective judgment within tightly scoped prompts.
+    </div>
+
+    <h2>Interview State Machine Flow</h2>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-n">1</div>
+        <div class="flow-body">
+          <strong>INIT → QUESTION_GIVEN</strong>
+          <p>A DSA question is fetched from the database based on role and difficulty. The LLM optionally rephrases it in natural, conversational language before presenting it to the candidate.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-n">2</div>
+        <div class="flow-body">
+          <strong>INTUITION_EXPLAINED → INTUITION_APPROVED / HINT_TRIGGERED</strong>
+          <p>The candidate explains their approach verbally. The LLM classifies the explanation as correct, partially correct, or incorrect. If correct, the interview advances to coding. If not, the progressive hint system is activated. Each hint request incurs a scoring penalty.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-n">3</div>
+        <div class="flow-body">
+          <strong>CODE_WRITTEN → CODE_EVALUATED</strong>
+          <p>The candidate writes their solution in the Monaco Editor. The submitted code is sent to the Piston API, which executes it in a sandboxed container against predefined test cases. Results are fully deterministic — the LLM is not involved in code correctness judgment at any point.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-n">4</div>
+        <div class="flow-body">
+          <strong>CODE_EXPLAINED → FOLLOW_UP</strong>
+          <p>The LLM, now aware of the candidate's code and test results, asks the candidate to explain time complexity, space complexity, and edge cases. Dynamic follow-up questions are then generated based on the specific solution submitted.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-n">5</div>
+        <div class="flow-body">
+          <strong>FINAL_FEEDBACK</strong>
+          <p>A structured evaluation report is generated containing scores across all dimensions and narrative feedback. This report is stored and made available to both the candidate and the hiring company immediately after the session ends.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-top:22px;">
+      <div>
+        <h2>Scoring Framework</h2>
+        <p style="font-size:12.5px;margin-bottom:14px;">A hybrid model combining deterministic and AI-assisted evaluation. Objective code scoring carries the highest weight to prevent manipulation through good verbal communication alone.</p>
+
+        <div class="sbar">
+          <div class="sbar-top"><span>Code Correctness (Deterministic)</span><span>70%</span></div>
+          <div class="sbar-track"><div class="sbar-fill" style="width:70%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div></div>
+        </div>
+        <div class="sbar">
+          <div class="sbar-top"><span>Intuition Quality (LLM)</span><span>15%</span></div>
+          <div class="sbar-track"><div class="sbar-fill" style="width:15%;background:linear-gradient(90deg,var(--accent2),#22d3ee)"></div></div>
+        </div>
+        <div class="sbar">
+          <div class="sbar-top"><span>Code Explanation (LLM)</span><span>10%</span></div>
+          <div class="sbar-track"><div class="sbar-fill" style="width:10%;background:linear-gradient(90deg,#d97706,#fbbf24)"></div></div>
+        </div>
+        <div class="sbar">
+          <div class="sbar-top"><span>Communication (LLM)</span><span>5%</span></div>
+          <div class="sbar-track"><div class="sbar-fill" style="width:5%;background:linear-gradient(90deg,#059669,#34d399)"></div></div>
+        </div>
+
+        <div class="callout amber" style="margin-top:16px;">
+          <strong>Hint Penalty Applied to Final Score</strong>
+          0 hints → no deduction &nbsp;·&nbsp; 1 hint → −5%<br/>
+          2 hints → −10% &nbsp;·&nbsp; 3 hints → −20%
+        </div>
+      </div>
+
+      <div>
+        <h2>Progressive Hint System</h2>
+        <p style="font-size:12.5px;margin-bottom:14px;">Hints are dispensed in four progressively stronger levels. The LLM is prompted to give each level with a strict constraint — it must never reveal the full solution.</p>
+
+        <div class="card" style="margin-bottom:10px;">
+          <div class="card-title" style="color:var(--accent);">Level 1 — Directional</div>
+          <p>"Think about reducing repeated work in your current approach."</p>
+        </div>
+        <div class="card" style="margin-bottom:10px;">
+          <div class="card-title" style="color:var(--accent);">Level 2 — Structural</div>
+          <p>"Can a data structure that provides O(1) lookups help here?"</p>
+        </div>
+        <div class="card" style="margin-bottom:10px;">
+          <div class="card-title" style="color:var(--accent);">Level 3 — Strong</div>
+          <p>"Try storing elements you've seen and checking for their complements."</p>
+        </div>
+        <div class="card">
+          <div class="card-title" style="color:var(--accent);">Level 4 — Near-Solution</div>
+          <p>"For each element, check if target minus the current value exists in your map."</p>
+        </div>
+
+        <h3 style="margin-top:18px;">Resume Screening Engine</h3>
+        <p style="font-size:12.5px;">The FastAPI AI service processes uploaded resume PDFs through a pipeline: <strong>pdfplumber</strong> extracts text → <strong>spaCy NER</strong> identifies organisations and locations → <strong>regex patterns</strong> extract CGPA, experience, and skills → <strong>TF-IDF cosine similarity</strong> computes semantic match score (0–100%) against the job description. All scores are stored with the application record.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-text">HireSense — AI-Powered Talent Acquisition Platform</div>
+    <div class="page-num">4</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 5 — DATA MODELS & API
+══════════════════════════════════════ -->
+<div class="inner-page">
+  <div class="page-top-stripe"></div>
+  <div class="page-header">
+    <div class="page-header-logo">Hire<span>Sense</span> — Project Report</div>
+    <div class="page-header-right">Technical Documentation v1.0</div>
+  </div>
+  <div class="page-content">
+
+    <div class="chapter-label">Section 04</div>
+    <div class="chapter-title">Data Models & API Design</div>
+
+    <h2>Core MongoDB Schemas</h2>
+
+    <div class="two-col">
+      <div>
+        <h3>User Schema</h3>
+        <div class="snippet"><span class="k">name</span>:          String   <span class="c">// required</span>
+<span class="k">email</span>:         String   <span class="c">// unique index</span>
+<span class="k">password</span>:      String   <span class="c">// bcrypt hashed</span>
+<span class="k">role</span>:          Enum     <span class="c">// candidate|company|interviewer</span>
+<span class="k">accountStatus</span>: Enum     <span class="c">// active|deactivated</span>
+
+<span class="c">// Candidate fields</span>
+<span class="k">skills</span>:        [String]
+<span class="k">cgpa</span>:          Number
+<span class="k">resumeUrl</span>:     String
+<span class="k">openToWork</span>:    Boolean
+
+<span class="c">// Company fields</span>
+<span class="k">companyName</span>:   String
+<span class="k">industry</span>:      String
+
+<span class="c">// Interviewer fields</span>
+<span class="k">specialty</span>:     String
+<span class="k">timezone</span>:      String</div>
+
+        <h3>Application Schema</h3>
+        <div class="snippet"><span class="k">candidateId</span>:   ObjectId  <span class="c">// ref: User</span>
+<span class="k">jobId</span>:         ObjectId  <span class="c">// ref: Job</span>
+<span class="k">resumeScore</span>:   Number    <span class="c">// ML parsed score</span>
+<span class="k">matchScore</span>:    Number    <span class="c">// TF-IDF cosine %</span>
+<span class="k">status</span>:        Enum
+  <span class="c">// Applied|Testing|Interview|Rejected|Hired</span>
+<span class="k">oaStatus</span>:      Enum
+  <span class="c">// Not Scheduled|Scheduled|Completed</span>
+<span class="k">oaScore</span>:       Number
+<span class="k">oaWindowStart</span>: Date
+<span class="k">oaWindowEnd</span>:   Date</div>
+      </div>
+
+      <div>
+        <h3>Job Schema</h3>
+        <div class="snippet"><span class="k">title</span>:            String
+<span class="k">requiredSkills</span>:   [String]
+<span class="k">jobType</span>:          Enum
+  <span class="c">// Full-time|Part-time|Contract|Internship</span>
+<span class="k">stages</span>:           [Object]
+  <span class="k">name</span>:           String
+  <span class="k">interviewType</span>: Enum   <span class="c">// None|Human|AI</span>
+  <span class="k">advanceMode</span>:   Enum   <span class="c">// Manual|Auto</span>
+  <span class="k">advanceTopK</span>:   Number
+<span class="k">processStatus</span>:    Enum
+  <span class="c">// Active|Closed|Stopped</span>
+<span class="k">createdBy</span>:        ObjectId <span class="c">// ref: User</span></div>
+
+        <h3>Interview Schema</h3>
+        <div class="snippet"><span class="k">interviewMode</span>:  Enum   <span class="c">// Human|AI</span>
+<span class="k">scheduledAt</span>:    Date
+<span class="k">status</span>:         Enum
+  <span class="c">// Scheduled|Completed|Cancelled|Expired</span>
+<span class="k">remindersSent</span>:
+  <span class="k">twoHour</span>:      Boolean
+  <span class="k">fiveMin</span>:      Boolean
+<span class="k">scores</span>:
+  <span class="k">communication</span>:  Number <span class="c">// 0–10</span>
+  <span class="k">technical</span>:      Number <span class="c">// 0–10</span>
+  <span class="k">problemSolving</span>: Number <span class="c">// 0–10</span>
+  <span class="k">overall</span>:        Number <span class="c">// 0–10</span>
+<span class="k">roomId</span>:         String <span class="c">// unique UUID</span>
+<span class="k">autoScheduled</span>:  Boolean</div>
+      </div>
+    </div>
+
+    <h2>REST API Endpoints</h2>
+    <p style="font-size:12.5px; margin-bottom:10px;">All Core API routes served at <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:#f3f4f6;padding:2px 6px;border-radius:4px;">http://localhost:5000</code>. JWT authentication required on all protected routes.</p>
+
+    <table class="doc-table">
+      <thead>
+        <tr><th>Method</th><th>Route</th><th>Description</th><th>Access</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11.5px;">/api/auth/register</td>
+          <td>Register a new user (candidate / company / interviewer)</td>
+          <td style="color:var(--muted);font-size:12px;">Public</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11.5px;">/api/auth/login</td>
+          <td>Authenticate and receive signed JWT token</td>
+          <td style="color:var(--muted);font-size:12px;">Public</td>
+        </tr>
+        <tr>
+          <td><span class="method m-get">GET</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11.5px;">/api/jobs</td>
+          <td>List all active job postings with optional filters</td>
+          <td style="color:var(--muted);font-size:12px;">JWT</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11.5px;">/api/jobs</td>
+          <td>Create a new job posting with custom pipeline stages</td>
+          <td style="color:var(--muted);font-size:12px;">Company</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11.5px;">/api/applications</td>
+          <td>Submit application with resume file upload (Multer)</td>
+          <td style="color:var(--muted);font-size:12px;">Candidate</td>
+        </tr>
+        <tr>
+          <td><span class="method m-put">PUT</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11.5px;">/api/applications/:id/advance</td>
+          <td>Advance or reject a candidate through pipeline stages</td>
+          <td style="color:var(--muted);font-size:12px;">Company</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11.5px;">/api/interviews</td>
+          <td>Schedule an interview session (Human or AI mode)</td>
+          <td style="color:var(--muted);font-size:12px;">Company</td>
+        </tr>
+        <tr>
+          <td><span class="method m-post">POST</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:11.5px;">/api/interviewers</td>
+          <td>Submit structured interview feedback and scores</td>
+          <td style="color:var(--muted);font-size:12px;">Interviewer</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-text">HireSense — AI-Powered Talent Acquisition Platform</div>
+    <div class="page-num">5</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 6 — SETUP, ROADMAP & CONCLUSION
+══════════════════════════════════════ -->
+<div class="inner-page">
+  <div class="page-top-stripe"></div>
+  <div class="page-header">
+    <div class="page-header-logo">Hire<span>Sense</span> — Project Report</div>
+    <div class="page-header-right">Technical Documentation v1.0</div>
+  </div>
+  <div class="page-content">
+
+    <div class="chapter-label">Section 05</div>
+    <div class="chapter-title">Setup, Roadmap & Future Scope</div>
+
+    <div class="two-col">
+      <div>
+        <h2>Prerequisites</h2>
+        <ul>
+          <li><strong>Node.js v18+</strong> — for all backend services and frontend builds</li>
+          <li><strong>Python 3.9+</strong> — for the FastAPI AI service</li>
+          <li><strong>Ollama</strong> — to pull and serve LLaMA 3 locally on CPU</li>
+          <li><strong>MongoDB</strong> — local instance or MongoDB Atlas cloud cluster</li>
+          <li><strong>Docker</strong> (optional) — enhanced sandboxed code execution</li>
+        </ul>
+
+        <h2>Installation</h2>
+        <div class="snippet"><span class="c"># Clone repository</span>
+git clone https://github.com/abhirajk970/HireSense.git
+cd HireSense
+
+<span class="c"># Install Node dependencies (each service)</span>
+cd backend && npm install
+cd ../oa-backend && npm install
+
+<span class="c"># Set up Python AI service</span>
+cd ../ai-service
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+
+<span class="c"># Pull LLaMA 3 model (runs locally)</span>
+ollama pull llama3</div>
+
+        <h2>Environment Variables</h2>
+        <div class="snippet"><span class="c"># backend/.env</span>
+<span class="k">MONGO_URI</span>=<span class="v">mongodb://localhost:27017/hiresense</span>
+<span class="k">JWT_SECRET</span>=<span class="v">your_jwt_secret_key</span>
+<span class="k">PORT</span>=<span class="v">5000</span>
+
+<span class="c"># oa-backend/.env</span>
+<span class="k">MONGO_URI</span>=<span class="v">mongodb://localhost:27017/hiresense_oa</span>
+<span class="k">PORT</span>=<span class="v">4000</span></div>
+
+        <h2>Starting Services</h2>
+        <div class="snippet"><span class="c"># Terminal 1 — Core API</span>
+cd backend && npm run dev
+
+<span class="c"># Terminal 2 — OA Backend</span>
+cd oa-backend && npm run dev
+
+<span class="c"># Terminal 3 — AI Service (Python)</span>
+cd ai-service && uvicorn main:app --reload --port 8000
+
+<span class="c"># Terminal 4 — Main Frontend</span>
+cd frontend && npm run dev
+
+<span class="c"># Terminal 5 — LLM Runtime</span>
+ollama serve</div>
+      </div>
+
+      <div>
+        <h2>4-Week Implementation Roadmap</h2>
+
+        <div class="card" style="margin-bottom:12px; border-left:4px solid var(--accent);">
+          <div class="card-title">Week 1 — Foundation</div>
+          <ul style="padding-left:16px;margin:0;">
+            <li>MERN project structure and monorepo setup</li>
+            <li>JWT authentication and role-based access</li>
+            <li>Job posting and browsing interface</li>
+            <li>DSA question bank seeding scripts</li>
+          </ul>
+        </div>
+
+        <div class="card" style="margin-bottom:12px; border-left:4px solid var(--accent2);">
+          <div class="card-title">Week 2 — Code Engine</div>
+          <ul style="padding-left:16px;margin:0;">
+            <li>Monaco Editor integration in interview UI</li>
+            <li>Piston API connection for code execution</li>
+            <li>Test case framework and result display</li>
+            <li>Application pipeline management</li>
+          </ul>
+        </div>
+
+        <div class="card" style="margin-bottom:12px; border-left:4px solid #d97706;">
+          <div class="card-title">Week 3 — AI Integration</div>
+          <ul style="padding-left:16px;margin:0;">
+            <li>LLaMA 3 integration through Ollama</li>
+            <li>Interview state machine implementation</li>
+            <li>Intuition evaluation and hint generation</li>
+            <li>FastAPI resume parsing service</li>
+          </ul>
+        </div>
+
+        <div class="card" style="margin-bottom:20px; border-left:4px solid #059669;">
+          <div class="card-title">Week 4 — Polish & Completion</div>
+          <ul style="padding-left:16px;margin:0;">
+            <li>Full scoring engine and report generation</li>
+            <li>OA proctoring module integration</li>
+            <li>Cron-based email reminder system</li>
+            <li>UI polish across all dashboards</li>
+          </ul>
+        </div>
+
+        <h2>Future Scope</h2>
+        <ul>
+          <li><strong>Plagiarism Detection</strong> — code similarity analysis against public solutions</li>
+          <li><strong>RAG-Based Questions</strong> — personalized interview questions from the candidate's own resume</li>
+          <li><strong>System Design Module</strong> — extending AI interviews beyond DSA</li>
+          <li><strong>Voice-First Mode</strong> — fully spoken interviews using Whisper STT + TTS engine</li>
+          <li><strong>Multi-Language Support</strong> — Java, C++, Go, Rust in the code runner</li>
+          <li><strong>Analytics Dashboard</strong> — funnel metrics, time-to-hire, AI accuracy tracking</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:12px;">
+      <strong>📖 Conclusion</strong>
+      HireSense demonstrates that AI is most powerful not when used as a free-form chatbot, but when constrained inside a well-engineered system that uses it precisely for what it excels at — language understanding and contextual evaluation — while delegating objective, high-stakes decisions like code correctness to deterministic tools. The local-first LLM approach eliminates per-request API costs, keeps candidate data private, and makes the platform genuinely deployable at scale.
+    </div>
+
+    <div style="margin-top:28px; padding:18px 22px; border:1px solid var(--border); border-radius:10px; background:var(--surface); display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Repository</div>
+        <div style="font-size:13px;font-weight:600;color:var(--accent);">github.com/abhirajk970/HireSense</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Live Documentation</div>
+        <div style="font-size:13px;font-weight:600;color:var(--accent);">abhirajk970.github.io/HireSense</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">License</div>
+        <div style="font-size:13px;font-weight:600;color:var(--dark);">MIT Open Source</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-text">HireSense — AI-Powered Talent Acquisition Platform</div>
+    <div class="page-num">6</div>
+  </div>
+</div>
+
+</body>
+</html>

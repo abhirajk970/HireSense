@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
+import AssignmentSubmissionModal from "../components/AssignmentSubmissionModal";
 
 function CandidateDashboard() {
   const [jobs, setJobs] = useState([]);
@@ -10,6 +11,7 @@ function CandidateDashboard() {
   const [profile, setProfile] = useState({});
   const [filters, setFilters] = useState({ search: "", location: "All", minimumRequiredExperience: "" });
   const [activeTab, setActiveTab] = useState("jobs");
+  const [assignmentApp, setAssignmentApp] = useState(null);
 
   const navigate = useNavigate();
   const candidateId = localStorage.getItem("userId");
@@ -186,18 +188,18 @@ function CandidateDashboard() {
                                 </div>
                                 {deadline && (
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center border w-max ${isClosingSoon ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}`}>
-                                       {isClosingSoon ? '⚠ Closing soon · ' : '📅 Apply by '}
+                                       {isClosingSoon ? 'Closing soon · ' : 'Apply by '}
                                        {deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                     </span>
                                 )}
                                 {checkSalaryMatch(job.salaryRange, profile.expectedSalary) && (
                                     <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 w-max px-2 py-0.5 rounded-md flex items-center border border-emerald-500/20">
-                                       ✓ Matches Salary
+                                       Matches Salary
                                     </span>
                                 )}
                             </div>
                             {hasApplied ? (
-                                <span className="font-semibold px-4 py-2 rounded-xl text-sm border t-card t-text-muted">Applied ✓</span>
+                                <span className="font-semibold px-4 py-2 rounded-xl text-sm border t-card t-text-muted">Applied</span>
                             ) : isPastDeadline ? (
                                 <span className="font-semibold px-4 py-2 rounded-xl text-sm border border-red-500/20 text-red-400 bg-red-500/5">Closed</span>
                             ) : (
@@ -211,7 +213,7 @@ function CandidateDashboard() {
           </>
       )}
 
-      {activeTab === "applications" && (
+      {activeTab === "applied" && (
            <div className="rounded-2xl border overflow-hidden" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
            <table className="w-full text-left">
               <thead className="border-b" style={{ borderColor: 'var(--border)' }}>
@@ -242,7 +244,17 @@ function CandidateDashboard() {
                                </span>
                            </td>
                            <td className="p-4">
-                              <button onClick={() => navigate(`/test/mock/application/${app._id}`)} className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors">Take MCQ →</button>
+                               {(() => {
+                                  // Determine if current stage is Assignment
+                                  const now = new Date();
+                                  const assignmentStage = app.jobId?.stages?.find(s => s.name === "Assignment" && new Date(s.startDate) <= now && (!s.endDate || new Date(s.endDate) >= now));
+                                  if (assignmentStage && app.status === "Testing") {
+                                      return (
+                                          <button onClick={() => setAssignmentApp(app)} className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors">Open Assignment →</button>
+                                      );
+                                  }
+                                  return <span className="text-gray-500">-</span>;
+                               })()}
                            </td>
                        </tr>
                    ))}
@@ -283,10 +295,15 @@ function CandidateDashboard() {
                               </td>
                               <td className="p-4">
                                   {inWindow ? (
-                                      <a href={`http://localhost:5174/assessment/${app._id}/${app.candidateId}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-cyan-600 px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all hover:-translate-y-0.5 uppercase tracking-wider text-xs">
-                                        <span className="w-2 h-2 bg-white rounded-full animate-pulse"/>
-                                        Start OA
-                                      </a>
+                                      (() => {
+                                          const targetUrl = `http://localhost:5174/assessment/${app._id}/${app.candidateId}`;
+                                          return (
+                                              <a href={targetUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-cyan-600 px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all hover:-translate-y-0.5 uppercase tracking-wider text-xs">
+                                                <span className="w-2 h-2 bg-white rounded-full animate-pulse"/>
+                                                Start OA
+                                              </a>
+                                          );
+                                      })()
                                   ) : hasPassed ? (
                                       <span className="text-sm font-bold text-red-400">Window Expired</span>
                                   ) : (
@@ -301,52 +318,6 @@ function CandidateDashboard() {
         </div>
       )}
 
-      {/* ═══ ASSESSMENTS TAB ═══ */}
-      {activeTab === "assessments" && (
-          <div className="space-y-4">
-              <h2 className="text-xl font-bold mb-4 t-text">My Scheduled Assessments</h2>
-              {applications.filter(app => app.oaStatus).length === 0 ? (
-                  <div className="text-center p-12 bg-white/[0.03] rounded-xl border border-dashed border-white/[0.08] text-gray-500 font-medium">No active online assessments.</div>
-              ) : (
-                  <div className="grid grid-cols-1 gap-5">
-                      {applications.filter(app => app.oaStatus).map(app => {
-                          const now = new Date().getTime();
-                          const start = app.oaWindowStart ? new Date(app.oaWindowStart).getTime() : 0;
-                          const end = app.oaWindowEnd ? new Date(app.oaWindowEnd).getTime() : Infinity;
-                          const isJoinable = now >= start && now <= end && app.oaStatus === 'Scheduled';
-
-                          return (
-                              <div key={app._id} className="rounded-2xl border p-5 flex flex-col justify-between" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                                  <div className="flex justify-between items-start">
-                                      <div>
-                                          <h3 className="font-bold text-lg t-text">Online Assessment</h3>
-                                          <p className="text-sm font-medium text-indigo-400">{app.jobId?.title}</p>
-                                          {app.oaWindowStart && <p className="text-xs text-gray-400 mt-2">Active Window: {new Date(app.oaWindowStart).toLocaleString()} - {new Date(app.oaWindowEnd).toLocaleString()}</p>}
-                                      </div>
-                                      <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded border ${app.oaStatus === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'}`}>{app.oaStatus}</span>
-                                  </div>
-
-                                  <div className="flex items-center justify-between mt-6 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
-                                      {app.oaStatus === 'Scheduled' && (
-                                          <button 
-                                              disabled={!isJoinable}
-                                              onClick={() => window.open(`http://localhost:5174/assessment/${app._id}/${candidateId}`, '_blank')}
-                                              className={`px-4 py-2 w-full rounded-xl text-sm font-bold transition-all ${isJoinable ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-white/[0.05] text-gray-500 cursor-not-allowed'}`}
-                                          >
-                                              {isJoinable ? 'Start Assessment' : 'Window Inactive'}
-                                          </button>
-                                      )}
-                                      {app.oaStatus === 'Completed' && (
-                                          <div className="w-full text-center text-sm font-bold text-gray-400 py-2">Assessment Confirmed</div>
-                                      )}
-                                  </div>
-                              </div>
-                          )
-                      })}
-                  </div>
-              )}
-        </div>
-      )}
 
       {/* ═══ INTERVIEWS TAB ═══ */}
       {activeTab === "interviews" && (
@@ -369,7 +340,7 @@ function CandidateDashboard() {
                                       <div>
                                           <h3 className="font-bold text-lg t-text">{inv.stageName}</h3>
                                           <p className="text-xs text-indigo-400 font-medium">{inv.jobId?.title}</p>
-                                          <p className="text-xs text-gray-500 mt-1">{inv.interviewMode === 'AI' ? '🤖 AI Interviewer' : `Interviewer: ${inv.interviewerId?.companyName || 'Company Representative'}`}</p>
+                                          <p className="text-xs text-gray-500 mt-1">{inv.interviewMode === 'AI' ? 'AI Interviewer' : `Interviewer: ${inv.interviewerId?.companyName || 'Company Representative'}`}</p>
                                       </div>
                                       <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded border ${inv.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'}`}>{inv.status}</span>
                                   </div>
@@ -387,10 +358,19 @@ function CandidateDashboard() {
                                                   if(isExpired) {
                                                       alert('This interview has unfortunately expired as it is past the 1-hour active window limit.');
                                                   } else if (inv.interviewMode === 'AI') {
-                                                      const params = new URLSearchParams({ jobTitle: inv.jobId?.title || '', stage: inv.stageName, candidateId: localStorage.getItem('userId') || '' });
-                                                      window.open(`http://localhost:5179/room/${inv.roomId}?${params.toString()}`, '_blank');
+                                                      const params = new URLSearchParams({
+                                                          jobId: inv.jobId?._id || '',
+                                                          appId: inv.applicationId || '',
+                                                          candidateId: inv.candidateId?._id || localStorage.getItem('userId') || '',
+                                                          jobTitle: inv.jobId?.title || '',
+                                                          stage: inv.stageName,
+                                                          company: inv.jobId?.companyName || 'HireSense'
+                                                      });
+                                                      const url = `http://localhost:5179/room/${inv.roomId}?${params.toString()}`;
+                                                      window.open(url, '_blank');
                                                   } else {
-                                                      window.open(`http://localhost:5178/room/${inv.roomId}?role=candidate`, '_blank');
+                                                      const url = `http://localhost:5178/room/${inv.roomId}?role=candidate`;
+                                                      window.open(url, '_blank');
                                                   }
                                               }}
                                               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -411,6 +391,15 @@ function CandidateDashboard() {
       </div>
       )}
 
+      {assignmentApp && (
+          <AssignmentSubmissionModal 
+              application={assignmentApp} 
+              onClose={() => setAssignmentApp(null)} 
+              onSuccess={() => {
+                  fetchApplications();
+              }}
+          />
+      )}
     </DashboardLayout>
   );
 }
